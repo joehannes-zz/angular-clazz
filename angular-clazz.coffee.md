@@ -57,5 +57,9 @@ Thx for the basic mixin pattern: [the Coffeescript-Cookbook](http://coffeescript
 					@initialize()
 
 				initialize: () ->
-					for own trigger, behaviour of @behaviours
-					
+					for own trigger, behaviour of @_behaviours()
+						t = trigger.split "::"
+						for el in Sizzle(t[0], $element)
+							angular.element(el).on t[1], () =>
+								for own foo, params of behaviour
+									break if foo.apply(@, (if angular.isString param then @scope[param] else param) for param in params) is false					
