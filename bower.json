@@ -1,31 +1,31 @@
 {
-  "name": "angular-clazz",
-  "version": "0.0.0",
-  "authors": [
-    "Johannes Neugschwentner <johannes.neugschwentner@gmail.com>"
-  ],
-  "description": "Functional Multiple Inheritance and Controller-based Events for Angular",
-  "main": "angular-clazz.js",
-  "keywords": [
-    "angularJS",
-    "angular",
-    "OO",
-    "objectoriented",
-    "object-oriented",
-    "inheritance",
-    "mixin",
-    "event"
-  ],
-  "license": "MIT",
-  "homepage": "http://joehannes.github.io/angular-clazz/",
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "test",
-    "tests"
-  ],
-  "dependencies": {
-    "sizzle": "~1.10.19"
-  }
+    "name": "angular-clazz",
+    "version": "0.0.1",
+    "authors": [
+        "Johannes Neugschwentner <johannes.neugschwentner@gmail.com>"
+    ],
+    "description": "Functional Multiple Inheritance and Controller-based Eventing for Angular",
+    "main": "angular-clazz.js",
+    "keywords": [
+        "angularJS",
+        "angular",
+        "OO",
+        "objectoriented",
+        "object-oriented",
+        "inheritance",
+        "mixin",
+        "event"
+    ],
+    "license": "MIT",
+    "homepage": "http://joehannes.github.io/angular-clazz/",
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "tests"
+    ],
+    "dependencies": {
+        "sizzle": "~1.10.19"
+    }
 }
