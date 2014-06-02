@@ -21,8 +21,8 @@ This package enables for use in Angular in combination with Coffeescript:
 
 	mod.directive('dummy', (Clazz) ->
 		class Dummy extends Clazz.Ctrl
-		.inject()
-		.register mod
+			@inject()
+			@register mod
 			initialize: () -> #do important preparations
 			".links::click": () -> 
 				@_count @$scope.n
@@ -38,3 +38,16 @@ This package enables for use in Angular in combination with Coffeescript:
 	)
 ```
 
+**Restrictions**
+
+Multiple Inheritance is provided via the static `mixin` method. 
+If you want to give it a shot just write something like
+
+```
+		class Dummy extends Clazz.Ctrl
+		.mixin MyCollection.Base, MyCollection.Behaviours.StandardBehvaiours
+			@inject()
+			@register mod
+			initialize: () -> #do important preparations
+
+```
