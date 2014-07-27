@@ -143,8 +143,11 @@ Listen mechanism - Widget Ctrls only
 		.mixin OO.DB
 
 		class OO.Widget extends OO.Ctrl
-		.mixin OO.DB
 			@inject()
+			
+		class OO.DynamicWidget extends OO.Ctrl
+		.mixin OO.DB
+		.implements "_transform"
 
 		@$get = () -> OO
 
