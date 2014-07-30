@@ -12,7 +12,7 @@ Provider Definition
 Credit for the base class goes to Elad Ossadon as seen on [devign.me](http://www.devign.me/angular-dot-js-coffeescript-controller-base-class)
 
 		class OO.Injectable
-			@inject: (args...) -> 
+			@inject: (args...) ->
 				(args.push injectee if args.indexOf injectee is -1) for injectee in (@$inject?.push?(["$scope", "$element", "$attrs"]) or ["$scope", "$element", "$attrs"])
 				@$inject = args
 				@
@@ -65,7 +65,7 @@ Bring public methods into the $scope and attach all DI-injected services to `thi
 
 				(@[key] = args[index]) for key, index in @constructor.$inject
 				for key, fn of @constructor.prototype when typeof fn is "function" and ["constructor", "initialize"].indexOf key is -1 and key[0] isnt "_"
-					@$scope[key] = (args...) => 
+					@$scope[key] = (args...) =>
 						fn.apply @, args
 						@
 
@@ -79,6 +79,10 @@ Behavioural Initialization --- basically registering Event Listeners
 								angular.element(el).on t[1], (args...) =>
 									@$scope.n = i #provide a counter var for lists and similar (ng-)repeated els
 									behaviour.apply @, args
+
+Recalculate scoped vars so two-way-databinding is instantly functional
+
+									@$scope.$apply()
 
 Quasi-Constructor = Initialization of child classes as it is advised to not write custom constructors for child classes
 
@@ -100,7 +104,7 @@ Create the DB and initiate on Controller-Type
 				@api ?= {}
 				@$scope.db[name] =
 					busy: false
-					handle: @$resource api 
+					handle: @$resource api
 					raw: []
 					store: DB.create @name
 
@@ -109,7 +113,7 @@ Create the DB and initiate on Controller-Type
 
 AJAX Mechanism
 
-			_api: (name) -> 
+			_api: (name) ->
 				if @$scope.db[name].busy is true then return
 				@$scope.db[name].busy = true
 				@$scope.db[name].handle.get().$promise.then (data) =>
@@ -134,7 +138,7 @@ Broadcast mechanism - View Ctrls only
 
 Listen mechanism - Widget Ctrls only
 
-			_listen: (name) -> @$scope.$on "db.changed.#{name}", (ev, args...) => _transform.apply @, args
+			_listen: (name) -> @$scope.$on "db.changed.#{name}", (ev, args...) => @_transform.apply @, args
 
 		class OO.View extends OO.Ctrl
 			@inject()
@@ -144,7 +148,7 @@ Listen mechanism - Widget Ctrls only
 
 		class OO.Widget extends OO.Ctrl
 			@inject()
-			
+
 		class OO.DynamicWidget extends OO.Ctrl
 		.mixin OO.DB
 		.implements "_transform"
