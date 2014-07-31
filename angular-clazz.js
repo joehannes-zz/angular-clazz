@@ -9,7 +9,7 @@
 
   module.provider("Clazz", function() {
     var DB, OO;
-    DB = angular.injector(['pouchdb']).get('pouchdb');
+    DB = {};
     OO = {};
     OO.Injectable = (function() {
       function Injectable() {}

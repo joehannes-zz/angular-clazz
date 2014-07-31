@@ -6,7 +6,7 @@ Provider Definition
 
 	module.provider("Clazz", () ->
 
-		DB = angular.injector(['pouchdb']).get 'pouchdb'
+		DB = {} #angular.injector(['pouchdb']).get 'pouchdb'
 		OO = {}
 
 Credit for the base class goes to Elad Ossadon as seen on [devign.me](http://www.devign.me/angular-dot-js-coffeescript-controller-base-class)
