@@ -62,7 +62,7 @@
         })(this);
         for (_i = 0, _len = mixins.length; _i < _len; _i++) {
           mixin = mixins[_i];
-          _ref = mixin.prototype.by(-1);
+          _ref = mixin.prototype;
           _fn = function() {
             var m, n, _m;
             m = method;

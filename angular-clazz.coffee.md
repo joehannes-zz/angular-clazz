@@ -32,7 +32,7 @@ Thx for the basic mixin pattern: [the Coffeescript-Cookbook](http://coffeescript
 			@mixin: (mixins...) ->
 				class Mixed extends @
 				for mixin in mixins
-					for name, method of mixin:: by -1
+					for name, method of mixin::
 						(() ->
 							m = method
 							_m = Mixed::[name]
