@@ -7,9 +7,9 @@
 
   module = angular.module("angular-clazz", ['pouchdb']);
 
-  module.provider("Clazz", function(pouchdb) {
+  module.provider("Clazz", function() {
     var DB, OO;
-    DB = pouchdb;
+    DB = angular.injector(['pouchdb']).get('pouchdb');
     OO = {};
     OO.Injectable = (function() {
       function Injectable() {}
