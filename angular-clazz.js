@@ -308,9 +308,10 @@
       return DynamicWidget;
 
     })(OO.Ctrl.mixin(OO.DB)["implements"]("_transform"));
-    return this.$get = function() {
+    this.$get = function() {
       return OO;
     };
+    return null;
   });
 
 }).call(this);
