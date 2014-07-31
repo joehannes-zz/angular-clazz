@@ -9,7 +9,7 @@
 
   module.provider("Clazz", function() {
     var DB, OO;
-    DB = {};
+    DB = angular.injector(['pouchdb']).get('pouchdb');
     OO = {};
     OO.Injectable = (function() {
       function Injectable() {}
@@ -311,6 +311,11 @@
     this.$get = function() {
       return OO;
     };
+    return (function(_this) {
+      return function() {
+        return _this;
+      };
+    })(this);
   });
 
 }).call(this);
