@@ -311,7 +311,6 @@
     this.$get = function() {
       return OO;
     };
-    return null;
   });
 
 }).call(this);
