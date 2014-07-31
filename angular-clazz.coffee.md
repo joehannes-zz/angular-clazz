@@ -50,10 +50,10 @@ Pattern to enforce certain precisely named functionality in to be created/derive
 
 			@implements: (interfaces...) ->
 				class Interfaced extends @
-				for interface in interfaces
-					do (interface) ->
-						Interfaced::[interface] = () -> throw {
-							msg: "Looks like the interface _#{interface}_ hasn't been implemented! This will lead to unpredictable behaviour!"
+				for Interface in interfaces
+					do (Interface) ->
+						Interfaced::[Interface] = () -> throw {
+							msg: "Looks like the interface _#{Interface}_ hasn't been implemented! This will lead to unpredictable behaviour!"
 						}
 				Interfaced
 
@@ -108,7 +108,7 @@ Create the DB and initiate on Controller-Type
 					raw: []
 					store: DB.create @name
 
-				if @ instanceof OO.View then @$interval () => @_api(name), 15000
+				if @ instanceof OO.View then @$interval (() => @_api(name)), 15000
 				else if @ instanceof OO.Widget then @_listen name
 
 AJAX Mechanism
