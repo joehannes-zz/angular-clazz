@@ -17,7 +17,7 @@
       Injectable.inject = function() {
         var args, injectee, _i, _len, _ref, _ref1;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        _ref1 = ((_ref = this.$inject) != null ? typeof _ref.push === "function" ? _ref.push(["$scope", "$attrs"]) : void 0 : void 0) || ["$scope", "$attrs"];
+        _ref1 = ((_ref = this.$inject) != null ? typeof _ref.push === "function" ? _ref.push(["$scope"]) : void 0 : void 0) || ["$scope"];
         for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
           injectee = _ref1[_i];
           if (args.indexOf(injectee === -1)) {
