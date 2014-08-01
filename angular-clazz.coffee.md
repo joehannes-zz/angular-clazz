@@ -64,7 +64,7 @@ Runtime Initiation
 Bring public methods into the $scope and attach all DI-injected services to `this`
 
 				(@[key] = args[index]) for key, index in @constructor.$inject
-				for key, fn of @constructor.prototype when typeof fn is "function" and ["constructor", "initialize"].indexOf key is -1 and key[0] isnt "_"
+				for key, fn of @constructor.prototype when typeof fn is "function" and ["constructor", "initialize"].indexOf(key) is -1 and key[0] isnt "_"
 					@$scope[key] = (args...) =>
 						fn.apply @, args
 						@

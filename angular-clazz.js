@@ -130,7 +130,7 @@
         _ref1 = this.constructor.prototype;
         for (key in _ref1) {
           fn = _ref1[key];
-          if (typeof fn === "function" && ["constructor", "initialize"].indexOf(key === -1 && key[0] !== "_")) {
+          if (typeof fn === "function" && ["constructor", "initialize"].indexOf(key) === -1 && key[0] !== "_") {
             this.$scope[key] = (function(_this) {
               return function() {
                 var args;
