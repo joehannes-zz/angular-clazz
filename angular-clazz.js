@@ -17,7 +17,7 @@
       Injectable.inject = function() {
         var args, injectee, _i, _len, _ref, _ref1;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        _ref1 = ((_ref = this.$inject) != null ? typeof _ref.push === "function" ? _ref.push(["$scope", "$element", "$attrs"]) : void 0 : void 0) || ["$scope", "$element", "$attrs"];
+        _ref1 = ((_ref = this.$inject) != null ? typeof _ref.push === "function" ? _ref.push(["$scope", "$attrs"]) : void 0 : void 0) || ["$scope", "$attrs"];
         for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
           injectee = _ref1[_i];
           if (args.indexOf(injectee === -1)) {
@@ -146,12 +146,12 @@
           if (trigger.match("::")) {
             (function(_this) {
               return (function(trigger, behaviour) {
-                var el, i, t, _j, _len1, _ref2, _results;
+                var el, i, t, _j, _len1, _ref2, _ref3, _results;
                 t = trigger.split("::");
-                _ref2 = Sizzle(t[0], _this.$element[0]);
+                _ref3 = Sizzle(t[0], (_ref2 = _this.$scope.$element[0]) != null ? _ref2 : document.body);
                 _results = [];
-                for (i = _j = 0, _len1 = _ref2.length; _j < _len1; i = ++_j) {
-                  el = _ref2[i];
+                for (i = _j = 0, _len1 = _ref3.length; _j < _len1; i = ++_j) {
+                  el = _ref3[i];
                   _results.push((function(el, i) {
                     return angular.element(el).on(t[1], function() {
                       var args;

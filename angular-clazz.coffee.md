@@ -13,7 +13,7 @@ Credit for the base class goes to Elad Ossadon as seen on [devign.me](http://www
 
 		class OO.Injectable
 			@inject: (args...) ->
-				(args.push injectee if args.indexOf injectee is -1) for injectee in (@$inject?.push?(["$scope", "$element", "$attrs"]) or ["$scope", "$element", "$attrs"])
+				(args.push injectee if args.indexOf injectee is -1) for injectee in (@$inject?.push?(["$scope", "$attrs"]) or ["$scope", "$attrs"])
 				@$inject = args
 				@
 
@@ -74,7 +74,7 @@ Behavioural Initialization --- basically registering Event Listeners
 				for trigger, behaviour of @ when trigger.match "::"
 					do (trigger, behaviour) =>
 						t = trigger.split "::"
-						for el, i in Sizzle(t[0], @$element[0])
+						for el, i in Sizzle(t[0], @$scope.$element[0] ? document.body)
 							do (el, i) =>
 								angular.element(el).on t[1], (args...) =>
 									@$scope.n = i #provide a counter var for lists and similar (ng-)repeated els
