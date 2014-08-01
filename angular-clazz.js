@@ -311,11 +311,6 @@
     this.$get = function() {
       return OO;
     };
-    return (function(_this) {
-      return function() {
-        return _this;
-      };
-    })(this);
   });
 
 }).call(this);
