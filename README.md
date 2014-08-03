@@ -12,20 +12,80 @@ This package enables for use in Angular in combination with Coffeescript:
 
 **Dependencies**
 
-* Sizzle (if you `bower install angular-clazz` Sizzle should be pulled automatically, but don't forget to include it in your index.html)
+* Sizzle or full-blown jQuery
+* angular-pouchdb (either the author WSpringer accpeted my pull-request, or `git clone git@github.com:joehannes/angular-pouchdb.git`)
 
 **Example Usage**
 
-```
-	mod = angular.module('myModule', ['angular-clazz'])
 
-	mod.directive('dummy', (Clazz) ->
-		class Dummy extends Clazz.Ctrl
-			@inject()
-			@register mod
-			initialize: () -> #do important preparations
-			".links::click": () -> 
-				@_count @$scope.n
+Module Definition
+```
+	app = angular.module('myModule', ['angular-clazz'])
+
+	app.config ($routeProvider, ClazzProvider) ->
+		Clazz = ClazzProvider.$get()
+
+
+		class Main extends Clazz.DynamicView
+			@inject "$routeParams"
+			@register app
+```
+Create the DBs and connect them to the API
+```
+			initialize: () ->
+				promise = @_createDB "/api/somepath/", "someDbName"
+				promise.then(
+					() ->
+						#do something on promise resolved
+					,
+					(err) -> throw {
+						msg: "Database update on /api/somepath failed"
+						e: err
+					}
+					,
+					(name) =>
+						#if you poll in an interval you can as well never resolve the promise and do ...
+						#fetch all exact session data and add to db
+				)
+```
+Auto Event Handling and relocation for Logout
+```
+			".logout.button::click": () ->
+					@_clearMyToken()
+					window.location = "/"
+```
+The Actual Routing ...
+```
+
+		$routeProvider
+			.when '/console/:layout',
+				templateUrl: 'views/main.html'
+				controller: Main
+			.otherwise
+				redirectTo: '/console/default'
+```
+An Example Widget
+```
+	app.directive('dummy', (Clazz) ->
+		class Dummy extends Clazz.DynamicWidget
+			@register app
+			initialize: () -> @_listen "someDbName"
+			_transform: (name, args...) ->
+				@$scope.data ?= {}
+				doc = args[0]
+				if name is "someDbName"
+					@$scope.data.someDbData ?= []
+					if not doc.count? or doc.count is 0 then return
+					@$scope.data.someDbData.push {
+						id: doc.id
+						flower: doc.power
+						stars: doc.dream
+						superhero: doc.myOwnPersonalJesus
+					}
+				else if name is "someOtherDbName"
+					#and so on, should you have different datasources for this single widget, this should be useful
+			".links::click": () ->
+				@_count @$scope.n #if .links is a class attached to eg. a list, @$scope.n will reflect the $index of the clicked el
 				@_alert @$scope.greeter.first, @$scope.greeter.last
 			"::mouseleave": () -> alert "Goodbye, Mouseleave!"
 			_count: (c) -> alert "element nr #{c}"
@@ -34,20 +94,6 @@ This package enables for use in Angular in combination with Coffeescript:
 		controller: Dummy
 		templateUrl: "views/dummy.html"
 		replace: false
-		restrict: "EA"
+		restrict: "A"
 	)
-```
-
-**Restrictions**
-
-Multiple Inheritance is provided via the static `mixin` method. 
-If you want to give it a shot just write something like
-
-```
-		class Dummy extends Clazz.Ctrl
-		.mixin MyCollection.Base, MyCollection.Behaviours.StandardBehvaiours
-			@inject()
-			@register mod
-			initialize: () -> #do important preparations
-
 ```

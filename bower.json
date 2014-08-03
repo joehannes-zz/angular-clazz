@@ -1,6 +1,6 @@
 {
   "name": "angular-clazz",
-  "version": "0.0.3",
+  "version": "0.0.6",
   "authors": [
     "Johannes Neugschwentner <johannes.neugschwentner@gmail.com>"
   ],
@@ -27,9 +27,5 @@
     "bower_components",
     "test",
     "tests"
-  ],
-  "dependencies": {
-    "sizzle": "~1.10.19",
-    "angular-pouchdb": "~0.1.5"
-  }
+  ]
 }
