@@ -20,7 +20,7 @@
         _ref1 = __slice.call((_ref = this.$inject) != null ? _ref : []).concat(["$scope"]);
         for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
           injectee = _ref1[_i];
-          if (args.indexOf(injectee === -1)) {
+          if (args.indexOf(injectee) === -1) {
             args.push(injectee);
           }
         }

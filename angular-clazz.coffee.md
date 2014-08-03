@@ -13,7 +13,7 @@ Credit for the base class goes to Elad Ossadon as seen on [devign.me](http://www
 
 		class OO.Injectable
 			@inject: (args...) ->
-				(args.push(injectee) if args.indexOf injectee is -1) for injectee in [(@$inject ? [])..., "$scope"]
+				(args.push(injectee) if args.indexOf(injectee) is -1) for injectee in [(@$inject ? [])..., "$scope"]
 				@$inject = args
 				@
 
