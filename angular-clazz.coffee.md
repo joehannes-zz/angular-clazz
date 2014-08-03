@@ -6,14 +6,14 @@ Provider Definition
 
 	module.provider("Clazz", () ->
 
-		DB = angular.injector(['pouchdb']).get 'pouchdb'
+		_DB = angular.injector(['pouchdb']).get 'pouchdb'
 		OO = {}
 
 Credit for the base class goes to Elad Ossadon as seen on [devign.me](http://www.devign.me/angular-dot-js-coffeescript-controller-base-class)
 
 		class OO.Injectable
 			@inject: (args...) ->
-				(args.push injectee if args.indexOf injectee is -1) for injectee in (@$inject?.push?("$scope") or ["$scope"])
+				(args.push(injectee) if args.indexOf injectee is -1) for injectee in [(@$inject ? [])..., "$scope"]
 				@$inject = args
 				@
 
@@ -32,7 +32,7 @@ Thx for the basic mixin pattern: [the Coffeescript-Cookbook](http://coffeescript
 			@mixin: (mixins...) ->
 				class Mixed extends @
 				for mixin in mixins
-					for name, method of mixin::
+					for name, method of mixin.prototype
 						(() ->
 							m = method
 							_m = Mixed::[name]
@@ -41,9 +41,10 @@ Thx for the basic mixin pattern: [the Coffeescript-Cookbook](http://coffeescript
 								Mixed::initialize = () ->
 									m.call @
 									_m.call @
-							else Mixed::[name] = m
+							else if name isnt "constructor" and not Mixed::[name]? then Mixed::[name] = m
 						)()
 					(Mixed[name] = method) for own name, method of mixin when angular.isFunction method
+					Mixed.inject.apply Mixed, mixin.$inject
 				Mixed
 
 Pattern to enforce certain precisely named functionality in to be created/derived Child-Controllers
@@ -65,24 +66,24 @@ Bring public methods into the $scope and attach all DI-injected services to `thi
 
 				(@[key] = args[index]) for key, index in @constructor.$inject
 				for key, fn of @constructor.prototype when typeof fn is "function" and ["constructor", "initialize"].indexOf(key) is -1 and key[0] isnt "_"
-					@$scope[key] = (args...) =>
-						fn.apply @, args
-						@
 
 Behavioural Initialization --- basically registering Event Listeners
 
-				for trigger, behaviour of @ when trigger.match "::"
-					do (trigger, behaviour) =>
-						t = trigger.split "::"
-						for el, i in Sizzle(t[0], @$scope.$element[0] ? document.body)
+					if key.match "::"
+						t = key.split "::"
+						for el, i in Sizzle(t[0], document.body)
 							do (el, i) =>
 								angular.element(el).on t[1], (args...) =>
 									@$scope.n = i #provide a counter var for lists and similar (ng-)repeated els
-									behaviour.apply @, args
+									fn.apply @, args
 
 Recalculate scoped vars so two-way-databinding is instantly functional
 
 									@$scope.$apply()
+					else
+						@$scope[key] = (args...) =>
+							fn.apply @, args
+							@
 
 Quasi-Constructor = Initialization of child classes as it is advised to not write custom constructors for child classes
 
@@ -106,7 +107,7 @@ Create the DB and initiate on Controller-Type
 					busy: false
 					handle: if api? then @$resource api else null
 					raw: []
-					store: DB.create @name
+					store: _DB.create @name
 
 				if @ instanceof OO.View then @$interval (() => @_api(name)), 15000
 				else if @ instanceof OO.Widget
@@ -155,7 +156,10 @@ Broadcast mechanism - View Ctrls only
 
 Listen mechanism - Widget Ctrls only
 
-			_listen: (name) -> @$scope.$on "db.changed.#{name}", (ev, args...) => @_transform.apply @, args
+			_listen: (name) ->
+				@$scope.$on "db.changed.#{name}", (ev, args...) =>
+					args.unshift name
+					@_transform.apply @, args
 
 		class OO.View extends OO.Ctrl
 			@inject()

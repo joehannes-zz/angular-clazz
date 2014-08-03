@@ -8,8 +8,8 @@
   module = angular.module("angular-clazz", ['pouchdb']);
 
   module.provider("Clazz", function() {
-    var DB, OO;
-    DB = angular.injector(['pouchdb']).get('pouchdb');
+    var OO, _DB;
+    _DB = angular.injector(['pouchdb']).get('pouchdb');
     OO = {};
     OO.Injectable = (function() {
       function Injectable() {}
@@ -17,7 +17,7 @@
       Injectable.inject = function() {
         var args, injectee, _i, _len, _ref, _ref1;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        _ref1 = ((_ref = this.$inject) != null ? typeof _ref.push === "function" ? _ref.push("$scope") : void 0 : void 0) || ["$scope"];
+        _ref1 = __slice.call((_ref = this.$inject) != null ? _ref : []).concat(["$scope"]);
         for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
           injectee = _ref1[_i];
           if (args.indexOf(injectee === -1)) {
@@ -73,7 +73,7 @@
                 m.call(this);
                 return _m.call(this);
               };
-            } else {
+            } else if (name !== "constructor" && (Mixed.prototype[name] == null)) {
               return Mixed.prototype[name] = m;
             }
           };
@@ -88,6 +88,7 @@
               Mixed[name] = method;
             }
           }
+          Mixed.inject.apply(Mixed, mixin.$inject);
         }
         return Mixed;
       };
@@ -120,7 +121,7 @@
       };
 
       function Ctrl() {
-        var args, behaviour, fn, index, key, trigger, _i, _len, _ref, _ref1;
+        var args, el, fn, i, index, key, t, _fn, _i, _j, _len, _len1, _ref, _ref1, _ref2;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         _ref = this.constructor.$inject;
         for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
@@ -131,40 +132,34 @@
         for (key in _ref1) {
           fn = _ref1[key];
           if (typeof fn === "function" && ["constructor", "initialize"].indexOf(key) === -1 && key[0] !== "_") {
-            this.$scope[key] = (function(_this) {
-              return function() {
-                var args;
-                args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-                fn.apply(_this, args);
-                return _this;
-              };
-            })(this);
-          }
-        }
-        for (trigger in this) {
-          behaviour = this[trigger];
-          if (trigger.match("::")) {
-            (function(_this) {
-              return (function(trigger, behaviour) {
-                var el, i, t, _j, _len1, _ref2, _ref3, _results;
-                t = trigger.split("::");
-                _ref3 = Sizzle(t[0], (_ref2 = _this.$scope.$element[0]) != null ? _ref2 : document.body);
-                _results = [];
-                for (i = _j = 0, _len1 = _ref3.length; _j < _len1; i = ++_j) {
-                  el = _ref3[i];
-                  _results.push((function(el, i) {
-                    return angular.element(el).on(t[1], function() {
-                      var args;
-                      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-                      _this.$scope.n = i;
-                      behaviour.apply(_this, args);
-                      return _this.$scope.$apply();
-                    });
-                  })(el, i));
-                }
-                return _results;
-              });
-            })(this)(trigger, behaviour);
+            if (key.match("::")) {
+              t = key.split("::");
+              _ref2 = Sizzle(t[0], document.body);
+              _fn = (function(_this) {
+                return function(el, i) {
+                  return angular.element(el).on(t[1], function() {
+                    var args;
+                    args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+                    _this.$scope.n = i;
+                    fn.apply(_this, args);
+                    return _this.$scope.$apply();
+                  });
+                };
+              })(this);
+              for (i = _j = 0, _len1 = _ref2.length; _j < _len1; i = ++_j) {
+                el = _ref2[i];
+                _fn(el, i);
+              }
+            } else {
+              this.$scope[key] = (function(_this) {
+                return function() {
+                  var args;
+                  args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+                  fn.apply(_this, args);
+                  return _this;
+                };
+              })(this);
+            }
           }
         }
         if (typeof this.initialize === "function") {
@@ -196,7 +191,7 @@
           busy: false,
           handle: api != null ? this.$resource(api) : null,
           raw: [],
-          store: DB.create(this.name)
+          store: _DB.create(this.name)
         };
         if (this instanceof OO.View) {
           return this.$interval(((function(_this) {
@@ -285,6 +280,7 @@
           return function() {
             var args, ev;
             ev = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+            args.unshift(name);
             return _this._transform.apply(_this, args);
           };
         })(this));
