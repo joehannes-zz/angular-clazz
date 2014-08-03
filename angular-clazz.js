@@ -194,7 +194,7 @@
         }
         this.$scope.db[name] = {
           busy: false,
-          handle: this.$resource(api),
+          handle: api != null ? this.$resource(api) : null,
           raw: [],
           store: DB.create(this.name)
         };
@@ -205,7 +205,23 @@
             };
           })(this)), 15000);
         } else if (this instanceof OO.Widget) {
-          return this._listen(name);
+          this._listen(name);
+          return this.$scope.db[name].store.info().then((function(_this) {
+            return function(info) {
+              if (parseInt(info.doc_count) === 0) {
+                return _this._api(name);
+              } else {
+                return _this._broadcast(name, {
+                  db: _this.$scope.db[name].store,
+                  doc: null,
+                  count: parseInt(info.doc_count)
+                });
+              }
+            };
+          })(this))["catch"](function(err) {
+            console.log("error in db " + name + " while trying to see if it existed already ...");
+            throw err.toString();
+          });
         }
       };
 
@@ -223,28 +239,41 @@
       };
 
       DB.prototype._store = function(name, data) {
-        var o, _i, _len;
+        var o, _i, _len, _results;
         console.log("Schreibe das jetzt in die Datenbank");
         console.log(data);
+        _results = [];
         for (_i = 0, _len = data.length; _i < _len; _i++) {
           o = data[_i];
-          this.$scope.db[name].store.put(o).then((function(_this) {
-            return function(response) {
-              return _this.$scope.db[name].raw.push({
-                data: data,
-                id: response.id,
-                rev: response.rev
+          _results.push((function(_this) {
+            return function(o) {
+              return _this.scope.db[name].store.query(function(doc) {
+                if (doc.id === o.id) {
+                  return emit(doc);
+                }
+              }).then(function(doc) {
+                if (doc.error !== "not_found") {
+                  o._rev = doc._rev;
+                  o._id = doc._id;
+                }
+                return _this.$scope.db[name].store.put(o).then(function(response) {
+                  return _this._broadcast(name, {
+                    db: _this.$scope.db[name].store,
+                    doc: o,
+                    count: 1
+                  });
+                })["catch"](function(err) {
+                  console.log("db error: couldn't put " + (o.toString()));
+                  throw err.toString();
+                });
+              })["catch"](function(err) {
+                console.log("db error: couldn't query for " + (o.toString()));
+                throw err.toString();
               });
             };
-          })(this))["catch"]((function(_this) {
-            return function(err) {
-              return console.log("db error: couldn't put " + o);
-            };
-          })(this));
+          })(this)(o));
         }
-        if (this instanceof OO.View) {
-          return this._broadcast(name);
-        }
+        return _results;
       };
 
       DB.prototype._broadcast = function(name) {

@@ -104,12 +104,20 @@ Create the DB and initiate on Controller-Type
 				@api ?= {}
 				@$scope.db[name] =
 					busy: false
-					handle: @$resource api
+					handle: if api? then @$resource api else null
 					raw: []
 					store: DB.create @name
 
 				if @ instanceof OO.View then @$interval (() => @_api(name)), 15000
-				else if @ instanceof OO.Widget then @_listen name
+				else if @ instanceof OO.Widget
+					@_listen name
+					@$scope.db[name].store.info()
+						.then (info) =>
+							if parseInt(info.doc_count) is 0 then @_api(name)
+							else @_broadcast name, { db: @$scope.db[name].store, doc: null, count: parseInt(info.doc_count) }
+						.catch (err) ->
+							console.log "error in db #{name} while trying to see if it existed already ..."
+							throw err.toString()
 
 AJAX Mechanism
 
@@ -125,12 +133,21 @@ Storage Mechanism
 			_store: (name, data) ->
 				console.log "Schreibe das jetzt in die Datenbank"
 				console.log data
-				#change that so gets updated, not entirely overwritten
 				for o in data
-					@$scope.db[name].store.put(o)
-						.then (response) => @$scope.db[name].raw.push { data: data, id: response.id, rev: response.rev }
-						.catch (err) => console.log "db error: couldn't put #{o}"
-				if @ instanceof OO.View then @_broadcast name
+					do (o) =>
+						@scope.db[name].store.query((doc) -> if doc.id is o.id then emit doc)
+							.then (doc) =>
+								if doc.error isnt "not_found"
+									o._rev = doc._rev
+									o._id = doc._id
+								@$scope.db[name].store.put(o)
+									.then (response) => @_broadcast name, { db: @$scope.db[name].store, doc: o, count: 1 }
+									.catch (err) =>
+										console.log "db error: couldn't put #{o.toString()}"
+										throw err.toString()
+							.catch (err) =>
+								console.log "db error: couldn't query for #{o.toString()}"
+								throw err.toString()
 
 Broadcast mechanism - View Ctrls only
 
