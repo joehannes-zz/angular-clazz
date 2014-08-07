@@ -67,23 +67,29 @@ Bring public methods into the $scope and attach all DI-injected services to `thi
 				(@[key] = args[index]) for key, index in @constructor.$inject
 				for key, fn of @constructor.prototype when typeof fn is "function" and ["constructor", "initialize"].indexOf(key) is -1 and key[0] isnt "_"
 
+					do (key, fn) =>
+
 Behavioural Initialization --- basically registering Event Listeners
 
-					if key.match "::"
-						t = key.split "::"
-						for el, i in Sizzle(t[0], document.body)
-							do (el, i) =>
-								angular.element(el).on t[1], (args...) =>
-									@$scope.n = i #provide a counter var for lists and similar (ng-)repeated els
-									fn.apply @, args
+						if key.match "::"
+							console.log key
+							t = key.split "::"
+							for el, i in Sizzle(t[0], document.body)
+								do (el, i) =>
+									angular.element(el).on t[1], t[2], (args...) =>
+										if t[2]?
+											ev = args[0]
+											(i = j) for el, j in $(ev.currentTarget).parent().children().get() when el is ev.currentTarget
+										@$scope.n = i #provide a counter var for lists and similar (ng-)repeated els
+										fn.apply @, args
 
 Recalculate scoped vars so two-way-databinding is instantly functional
 
-									@$scope.$apply()
-					else
-						@$scope[key] = (args...) =>
-							fn.apply @, args
-							@
+										if not @$scope.$$phase then @$scope.$digest()
+						else
+							@$scope[key] = (args...) =>
+								fn.apply @, args
+								@
 
 Quasi-Constructor = Initialization of child classes as it is advised to not write custom constructors for child classes
 
@@ -100,22 +106,22 @@ Widget Controllers listen to that db-collections and transform and store that ad
 
 Create the DB and initiate on Controller-Type
 
-			_createDB: (api, name) ->
+			_createDB: (api, name, @volatile = false) ->
 				@$scope.db ?= {}
 				@api ?= {}
 				@$scope.db[name] =
 					busy: false
 					handle: if api? then @$resource api else null
 					raw: []
-					store: _DB.create @name
+					store: @volatile and [] or _DB.create name
 
-				if @ instanceof OO.View then @$interval (() => @_api(name)), 15000
+				if @ instanceof OO.View then @$interval (() => @_api(name)), 7000
 				else if @ instanceof OO.Widget
 					@_listen name
 					@$scope.db[name].store.info()
 						.then (info) =>
 							if parseInt(info.doc_count) is 0 then @_api(name)
-							else @_broadcast name, { db: @$scope.db[name].store, doc: null, count: parseInt(info.doc_count) }
+							else @_broadcast name, { db: @$scope.db[name].store, doc: [], count: parseInt(info.doc_count) }
 						.catch (err) ->
 							console.log "error in db #{name} while trying to see if it existed already ..."
 							throw err.toString()
@@ -132,27 +138,39 @@ AJAX Mechanism
 Storage Mechanism
 
 			_store: (name, data) ->
-				console.log "Schreibe das jetzt in die Datenbank"
-				console.log data
-				for o in data
-					do (o) =>
-						@scope.db[name].store.query((doc) -> if doc.id is o.id then emit doc)
-							.then (doc) =>
-								if doc.error isnt "not_found"
-									o._rev = doc._rev
-									o._id = doc._id
-								@$scope.db[name].store.put(o)
-									.then (response) => @_broadcast name, { db: @$scope.db[name].store, doc: o, count: 1 }
-									.catch (err) =>
-										console.log "db error: couldn't put #{o.toString()}"
-										throw err.toString()
-							.catch (err) =>
-								console.log "db error: couldn't query for #{o.toString()}"
-								throw err.toString()
+				if not @volatile
+					for o in data.contents
+						do (o) =>
+							@$scope.db[name].store.query((doc, emit) -> if doc.id is o.id then emit doc)
+								.then (doc) =>
+									console.info '#Data for id _#{o.id}_ will be updated now'
+									if doc.error isnt "not_found" and doc.total_rows is 1
+										o._id = doc.rows[0].key._id
+										o._rev = doc.rows[0].key._rev
+								.catch (err) =>
+									console.warn "db error: couldn't query for #{o.id}"
+									throw err.toString()
+								.finally (args...) =>
+									@$scope.db[name].store.put(o, o.id, o._rev)
+										.then (response) => @_broadcast name, { db: @$scope.db[name].store, doc: [o], count: 1 }
+										.catch (err) =>
+											console.warn "db error: couldn't put #{o.toString()}"
+											throw err.toString()
+				else
+					(o.deleted = true) for o in @$scope.db[name].store
+					for o in data.contents
+						do (o) =>
+							if (i = @$scope.db[name].store.findIndex((el) -> el.id is o.id)) isnt -1
+								(@$scope.db[name].store[i][k] = o[k]) for own k, v of o
+								@$scope.db[name].store[i].deleted = false
+							else 
+								@$scope.db[name].store.push o
+								@$scope.db[name].store[@$scope.db[name].store.length - 1].deleted = false
+					@_broadcast name, { db: @$scope.db[name].store, doc: data.contents, count: data.contents.length }
 
 Broadcast mechanism - View Ctrls only
 
-			_broadcast: (name) -> @$scope.$broadcast "db.changed.#{name}", @$scope.db[name].store
+			_broadcast: (name, data) -> @$scope.$broadcast "db.changed.#{name}", data
 
 Listen mechanism - Widget Ctrls only
 

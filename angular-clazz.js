@@ -121,7 +121,7 @@
       };
 
       function Ctrl() {
-        var args, el, fn, i, index, key, t, _fn, _i, _j, _len, _len1, _ref, _ref1, _ref2;
+        var args, fn, index, key, _i, _len, _ref, _ref1;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         _ref = this.constructor.$inject;
         for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
@@ -132,34 +132,49 @@
         for (key in _ref1) {
           fn = _ref1[key];
           if (typeof fn === "function" && ["constructor", "initialize"].indexOf(key) === -1 && key[0] !== "_") {
-            if (key.match("::")) {
-              t = key.split("::");
-              _ref2 = Sizzle(t[0], document.body);
-              _fn = (function(_this) {
-                return function(el, i) {
-                  return angular.element(el).on(t[1], function() {
+            (function(_this) {
+              return (function(key, fn) {
+                var el, i, t, _j, _len1, _ref2, _results;
+                if (key.match("::")) {
+                  console.log(key);
+                  t = key.split("::");
+                  _ref2 = Sizzle(t[0], document.body);
+                  _results = [];
+                  for (i = _j = 0, _len1 = _ref2.length; _j < _len1; i = ++_j) {
+                    el = _ref2[i];
+                    _results.push((function(el, i) {
+                      return angular.element(el).on(t[1], t[2], function() {
+                        var args, ev, j, _k, _len2, _ref3;
+                        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+                        if (t[2] != null) {
+                          ev = args[0];
+                          _ref3 = $(ev.currentTarget).parent().children().get();
+                          for (j = _k = 0, _len2 = _ref3.length; _k < _len2; j = ++_k) {
+                            el = _ref3[j];
+                            if (el === ev.currentTarget) {
+                              i = j;
+                            }
+                          }
+                        }
+                        _this.$scope.n = i;
+                        fn.apply(_this, args);
+                        if (!_this.$scope.$$phase) {
+                          return _this.$scope.$digest();
+                        }
+                      });
+                    })(el, i));
+                  }
+                  return _results;
+                } else {
+                  return _this.$scope[key] = function() {
                     var args;
                     args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-                    _this.$scope.n = i;
                     fn.apply(_this, args);
-                    return _this.$scope.$apply();
-                  });
-                };
-              })(this);
-              for (i = _j = 0, _len1 = _ref2.length; _j < _len1; i = ++_j) {
-                el = _ref2[i];
-                _fn(el, i);
-              }
-            } else {
-              this.$scope[key] = (function(_this) {
-                return function() {
-                  var args;
-                  args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-                  fn.apply(_this, args);
-                  return _this;
-                };
-              })(this);
-            }
+                    return _this;
+                  };
+                }
+              });
+            })(this)(key, fn);
           }
         }
         if (typeof this.initialize === "function") {
@@ -179,8 +194,9 @@
 
       DB.inject("$resource", "$interval");
 
-      DB.prototype._createDB = function(api, name) {
+      DB.prototype._createDB = function(api, name, volatile) {
         var _base;
+        this.volatile = volatile != null ? volatile : false;
         if ((_base = this.$scope).db == null) {
           _base.db = {};
         }
@@ -191,14 +207,14 @@
           busy: false,
           handle: api != null ? this.$resource(api) : null,
           raw: [],
-          store: _DB.create(this.name)
+          store: this.volatile && [] || _DB.create(name)
         };
         if (this instanceof OO.View) {
           return this.$interval(((function(_this) {
             return function() {
               return _this._api(name);
             };
-          })(this)), 15000);
+          })(this)), 7000);
         } else if (this instanceof OO.Widget) {
           this._listen(name);
           return this.$scope.db[name].store.info().then((function(_this) {
@@ -208,7 +224,7 @@
               } else {
                 return _this._broadcast(name, {
                   db: _this.$scope.db[name].store,
-                  doc: null,
+                  doc: [],
                   count: parseInt(info.doc_count)
                 });
               }
@@ -234,45 +250,84 @@
       };
 
       DB.prototype._store = function(name, data) {
-        var o, _i, _len, _results;
-        console.log("Schreibe das jetzt in die Datenbank");
-        console.log(data);
-        _results = [];
-        for (_i = 0, _len = data.length; _i < _len; _i++) {
-          o = data[_i];
-          _results.push((function(_this) {
-            return function(o) {
-              return _this.scope.db[name].store.query(function(doc) {
-                if (doc.id === o.id) {
-                  return emit(doc);
-                }
-              }).then(function(doc) {
-                if (doc.error !== "not_found") {
-                  o._rev = doc._rev;
-                  o._id = doc._id;
-                }
-                return _this.$scope.db[name].store.put(o).then(function(response) {
-                  return _this._broadcast(name, {
-                    db: _this.$scope.db[name].store,
-                    doc: o,
-                    count: 1
-                  });
+        var o, _fn, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
+        if (!this.volatile) {
+          _ref = data.contents;
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            o = _ref[_i];
+            _results.push((function(_this) {
+              return function(o) {
+                return _this.$scope.db[name].store.query(function(doc, emit) {
+                  if (doc.id === o.id) {
+                    return emit(doc);
+                  }
+                }).then(function(doc) {
+                  console.info('#Data for id _#{o.id}_ will be updated now');
+                  if (doc.error !== "not_found" && doc.total_rows === 1) {
+                    o._id = doc.rows[0].key._id;
+                    return o._rev = doc.rows[0].key._rev;
+                  }
                 })["catch"](function(err) {
-                  console.log("db error: couldn't put " + (o.toString()));
+                  console.warn("db error: couldn't query for " + o.id);
                   throw err.toString();
+                })["finally"](function() {
+                  var args;
+                  args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+                  return _this.$scope.db[name].store.put(o, o.id, o._rev).then(function(response) {
+                    return _this._broadcast(name, {
+                      db: _this.$scope.db[name].store,
+                      doc: [o],
+                      count: 1
+                    });
+                  })["catch"](function(err) {
+                    console.warn("db error: couldn't put " + (o.toString()));
+                    throw err.toString();
+                  });
                 });
-              })["catch"](function(err) {
-                console.log("db error: couldn't query for " + (o.toString()));
-                throw err.toString();
-              });
+              };
+            })(this)(o));
+          }
+          return _results;
+        } else {
+          _ref1 = this.$scope.db[name].store;
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            o = _ref1[_j];
+            o.deleted = true;
+          }
+          _ref2 = data.contents;
+          _fn = (function(_this) {
+            return function(o) {
+              var i, k, v;
+              if ((i = _this.$scope.db[name].store.findIndex(function(el) {
+                return el.id === o.id;
+              })) !== -1) {
+                for (k in o) {
+                  if (!__hasProp.call(o, k)) continue;
+                  v = o[k];
+                  _this.$scope.db[name].store[i][k] = o[k];
+                }
+                return _this.$scope.db[name].store[i].deleted = false;
+              } else {
+                _this.$scope.db[name].store.push(o);
+                return _this.$scope.db[name].store[_this.$scope.db[name].store.length - 1].deleted = false;
+              }
             };
-          })(this)(o));
+          })(this);
+          for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+            o = _ref2[_k];
+            _fn(o);
+          }
+          return this._broadcast(name, {
+            db: this.$scope.db[name].store,
+            doc: data.contents,
+            count: data.contents.length
+          });
         }
-        return _results;
       };
 
-      DB.prototype._broadcast = function(name) {
-        return this.$scope.$broadcast("db.changed." + name, this.$scope.db[name].store);
+      DB.prototype._broadcast = function(name, data) {
+        return this.$scope.$broadcast("db.changed." + name, data);
       };
 
       DB.prototype._listen = function(name) {
