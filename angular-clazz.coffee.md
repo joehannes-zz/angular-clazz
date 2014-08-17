@@ -74,9 +74,12 @@ Behavioural Initialization --- basically registering Event Listeners
 						if key.match "::"
 							console.log key
 							t = key.split "::"
-							for el, i in Sizzle(t[0], document.body)
+							for el, i in (t[0] and Sizzle(t[0], @element?.context ? document.body) or [@$element?.context])
 								do (el, i) =>
-									angular.element(el).on t[1], t[2], (args...) =>
+									listenerO = [t[1]]
+									listenerO.push(t[2]) if t[2]?
+									listenerO.push (args...) =>
+										console.log key
 										if t[2]?
 											ev = args[0]
 											(i = j) for el, j in $(ev.currentTarget).parent().children().get() when el is ev.currentTarget
@@ -86,6 +89,8 @@ Behavioural Initialization --- basically registering Event Listeners
 Recalculate scoped vars so two-way-databinding is instantly functional
 
 										if not @$scope.$$phase then @$scope.$digest()
+
+									angular.element(el).on.apply angular.element(el), listenerO
 						else
 							@$scope[key] = (args...) =>
 								fn.apply @, args
@@ -186,7 +191,7 @@ Listen mechanism - Widget Ctrls only
 		.mixin OO.DB
 
 		class OO.Widget extends OO.Ctrl
-			@inject()
+			@inject "$element"
 
 		class OO.DynamicWidget extends OO.Ctrl
 		.mixin OO.DB

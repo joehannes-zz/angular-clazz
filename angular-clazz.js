@@ -134,23 +134,29 @@
           if (typeof fn === "function" && ["constructor", "initialize"].indexOf(key) === -1 && key[0] !== "_") {
             (function(_this) {
               return (function(key, fn) {
-                var el, i, t, _j, _len1, _ref2, _results;
+                var el, i, t, _j, _len1, _ref2, _ref3, _ref4, _ref5, _results;
                 if (key.match("::")) {
                   console.log(key);
                   t = key.split("::");
-                  _ref2 = Sizzle(t[0], document.body);
+                  _ref5 = t[0] && Sizzle(t[0], (_ref2 = (_ref3 = _this.element) != null ? _ref3.context : void 0) != null ? _ref2 : document.body) || [(_ref4 = _this.$element) != null ? _ref4.context : void 0];
                   _results = [];
-                  for (i = _j = 0, _len1 = _ref2.length; _j < _len1; i = ++_j) {
-                    el = _ref2[i];
+                  for (i = _j = 0, _len1 = _ref5.length; _j < _len1; i = ++_j) {
+                    el = _ref5[i];
                     _results.push((function(el, i) {
-                      return angular.element(el).on(t[1], t[2], function() {
-                        var args, ev, j, _k, _len2, _ref3;
+                      var listenerO;
+                      listenerO = [t[1]];
+                      if (t[2] != null) {
+                        listenerO.push(t[2]);
+                      }
+                      listenerO.push(function() {
+                        var args, ev, j, _k, _len2, _ref6;
                         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+                        console.log(key);
                         if (t[2] != null) {
                           ev = args[0];
-                          _ref3 = $(ev.currentTarget).parent().children().get();
-                          for (j = _k = 0, _len2 = _ref3.length; _k < _len2; j = ++_k) {
-                            el = _ref3[j];
+                          _ref6 = $(ev.currentTarget).parent().children().get();
+                          for (j = _k = 0, _len2 = _ref6.length; _k < _len2; j = ++_k) {
+                            el = _ref6[j];
                             if (el === ev.currentTarget) {
                               i = j;
                             }
@@ -162,6 +168,7 @@
                           return _this.$scope.$digest();
                         }
                       });
+                      return angular.element(el).on.apply(angular.element(el), listenerO);
                     })(el, i));
                   }
                   return _results;
@@ -373,7 +380,7 @@
         return Widget.__super__.constructor.apply(this, arguments);
       }
 
-      Widget.inject();
+      Widget.inject("$element");
 
       return Widget;
 
