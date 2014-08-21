@@ -257,12 +257,12 @@
       };
 
       DB.prototype._store = function(name, data) {
-        var o, _fn, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
+        var o, _fn, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9, _results;
         if (!this.volatile) {
-          _ref = data.contents;
+          _ref2 = (_ref = (_ref1 = data.contents) != null ? _ref1 : data.content) != null ? _ref : data;
           _results = [];
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            o = _ref[_i];
+          for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+            o = _ref2[_i];
             _results.push((function(_this) {
               return function(o) {
                 return _this.$scope.db[name].store.query(function(doc, emit) {
@@ -297,12 +297,12 @@
           }
           return _results;
         } else {
-          _ref1 = this.$scope.db[name].store;
-          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-            o = _ref1[_j];
+          _ref3 = this.$scope.db[name].store;
+          for (_j = 0, _len1 = _ref3.length; _j < _len1; _j++) {
+            o = _ref3[_j];
             o.deleted = true;
           }
-          _ref2 = data.contents;
+          _ref6 = (_ref4 = (_ref5 = data.contents) != null ? _ref5 : data.content) != null ? _ref4 : data;
           _fn = (function(_this) {
             return function(o) {
               var i, k, v;
@@ -321,14 +321,14 @@
               }
             };
           })(this);
-          for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-            o = _ref2[_k];
+          for (_k = 0, _len2 = _ref6.length; _k < _len2; _k++) {
+            o = _ref6[_k];
             _fn(o);
           }
           return this._broadcast(name, {
             db: this.$scope.db[name].store,
-            doc: data.contents,
-            count: data.contents.length
+            doc: (_ref7 = (_ref8 = data.contents) != null ? _ref8 : data.content) != null ? _ref7 : data,
+            count: (_ref9 = (_ref10 = (_ref11 = (_ref12 = data.contents) != null ? _ref12.length : void 0) != null ? _ref11 : (_ref13 = data.content) != null ? _ref13.length : void 0) != null ? _ref10 : data.length) != null ? _ref9 : 0
           });
         }
       };
@@ -394,7 +394,7 @@
 
       return DynamicWidget;
 
-    })(OO.Ctrl.mixin(OO.DB)["implements"]("_transform"));
+    })(OO.Widget.mixin(OO.DB)["implements"]("_transform"));
     this.$get = function() {
       return OO;
     };

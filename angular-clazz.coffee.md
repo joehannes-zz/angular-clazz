@@ -144,7 +144,7 @@ Storage Mechanism
 
 			_store: (name, data) ->
 				if not @volatile
-					for o in data.contents
+					for o in (data.contents ? data.content ? data)
 						do (o) =>
 							@$scope.db[name].store.query((doc, emit) -> if doc.id is o.id then emit doc)
 								.then (doc) =>
@@ -163,7 +163,7 @@ Storage Mechanism
 											throw err.toString()
 				else
 					(o.deleted = true) for o in @$scope.db[name].store
-					for o in data.contents
+					for o in (data.contents ? data.content ? data)
 						do (o) =>
 							if (i = @$scope.db[name].store.findIndex((el) -> el.id is o.id)) isnt -1
 								(@$scope.db[name].store[i][k] = o[k]) for own k, v of o
@@ -171,7 +171,7 @@ Storage Mechanism
 							else 
 								@$scope.db[name].store.push o
 								@$scope.db[name].store[@$scope.db[name].store.length - 1].deleted = false
-					@_broadcast name, { db: @$scope.db[name].store, doc: data.contents, count: data.contents.length }
+					@_broadcast name, { db: @$scope.db[name].store, doc: data.contents ? data.content ? data, count: data.contents?.length ? data.content?.length ? data.length ? 0 }
 
 Broadcast mechanism - View Ctrls only
 
@@ -193,7 +193,7 @@ Listen mechanism - Widget Ctrls only
 		class OO.Widget extends OO.Ctrl
 			@inject "$element"
 
-		class OO.DynamicWidget extends OO.Ctrl
+		class OO.DynamicWidget extends OO.Widget
 		.mixin OO.DB
 		.implements "_transform"
 
