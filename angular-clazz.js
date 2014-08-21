@@ -259,9 +259,6 @@
       DB.prototype._store = function(name, data) {
         var o, _fn, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
         data = (_ref = (_ref1 = data.contents) != null ? _ref1 : data.content) != null ? _ref : data;
-        if (Object.prototype.toString.call(data !== "[object Array]")) {
-          data = [data];
-        }
         if (!this.volatile) {
           _results = [];
           for (_i = 0, _len = data.length; _i < _len; _i++) {
