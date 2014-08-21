@@ -143,8 +143,10 @@ AJAX Mechanism
 Storage Mechanism
 
 			_store: (name, data) ->
+				data = data.contents ? data.content ? data
+				data = [data] if Object.prototype.toString.call data isnt "[object Array]"
 				if not @volatile
-					for o in (data.contents ? data.content ? data)
+					for o in data
 						do (o) =>
 							@$scope.db[name].store.query((doc, emit) -> if doc.id is o.id then emit doc)
 								.then (doc) =>
@@ -163,7 +165,7 @@ Storage Mechanism
 											throw err.toString()
 				else
 					(o.deleted = true) for o in @$scope.db[name].store
-					for o in (data.contents ? data.content ? data)
+					for o in data
 						do (o) =>
 							if (i = @$scope.db[name].store.findIndex((el) -> el.id is o.id)) isnt -1
 								(@$scope.db[name].store[i][k] = o[k]) for own k, v of o
@@ -171,7 +173,7 @@ Storage Mechanism
 							else 
 								@$scope.db[name].store.push o
 								@$scope.db[name].store[@$scope.db[name].store.length - 1].deleted = false
-					@_broadcast name, { db: @$scope.db[name].store, doc: data.contents ? data.content ? data, count: data.contents?.length ? data.content?.length ? data.length ? 0 }
+					@_broadcast name, { db: @$scope.db[name].store, doc: data, count: data.length }
 
 Broadcast mechanism - View Ctrls only
 
