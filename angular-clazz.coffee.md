@@ -144,7 +144,6 @@ Storage Mechanism
 
 			_store: (name, data) ->
 				data = data.contents ? data.content ? data
-				data = [data] if Object.prototype.toString.call data isnt "[object Array]"
 				if not @volatile
 					for o in data
 						do (o) =>
