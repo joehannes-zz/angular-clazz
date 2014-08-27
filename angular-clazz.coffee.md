@@ -1,12 +1,16 @@
+Dependency on Selector Engine -- Choose Sizzle or jQuery
+
+	window.Sizzle ?= window.$ ? null
+
 Module Definition
 
-	module = angular.module "angular-clazz", ['pouchdb']
+	module = angular.module "angular-clazz", []
 
 Provider Definition
 
 	module.provider("Clazz", () ->
 
-		_DB = angular.injector(['pouchdb']).get 'pouchdb'
+		_DB = angular.injector(['pouchdb'])?.get? 'pouchdb'
 		OO = {}
 
 Credit for the base class goes to Elad Ossadon as seen on [devign.me](http://www.devign.me/angular-dot-js-coffeescript-controller-base-class)
