@@ -10,7 +10,10 @@ Provider Definition
 
 	module.provider("Clazz", () ->
 
-		_DB = angular.injector(['pouchdb'])?.get? 'pouchdb'
+		try
+			_DB = angular.injector(['pouchdb'])?.get? 'pouchdb'
+		catch err
+			console.info "Angular-PouchDB not available - you can't use local persistance, but volatile version is available"
 		OO = {}
 
 Credit for the base class goes to Elad Ossadon as seen on [devign.me](http://www.devign.me/angular-dot-js-coffeescript-controller-base-class)

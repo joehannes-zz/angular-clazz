@@ -12,8 +12,13 @@
   module = angular.module("angular-clazz", []);
 
   module.provider("Clazz", function() {
-    var OO, _DB, _ref1;
-    _DB = (_ref1 = angular.injector(['pouchdb'])) != null ? typeof _ref1.get === "function" ? _ref1.get('pouchdb') : void 0 : void 0;
+    var OO, err, _DB, _ref1;
+    try {
+      _DB = (_ref1 = angular.injector(['pouchdb'])) != null ? typeof _ref1.get === "function" ? _ref1.get('pouchdb') : void 0 : void 0;
+    } catch (_error) {
+      err = _error;
+      console.info("Angular-PouchDB not available - you can't use local persistance, but volatile version is available");
+    }
     OO = {};
     OO.Injectable = (function() {
       function Injectable() {}
