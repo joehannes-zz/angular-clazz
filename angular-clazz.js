@@ -201,9 +201,10 @@
 
       DB.inject("$resource", "$interval");
 
-      DB.prototype._createDB = function(api, name, volatile) {
+      DB.prototype._createDB = function(api, name, volatile, oneshot) {
         var _base;
         this.volatile = volatile != null ? volatile : false;
+        this.oneshot = oneshot != null ? oneshot : false;
         if ((_base = this.$scope).db == null) {
           _base.db = {};
         }
@@ -217,11 +218,8 @@
           store: this.volatile && [] || _DB.create(name)
         };
         if (this instanceof OO.View) {
-          return this.$interval(((function(_this) {
-            return function() {
-              return _this._api(name);
-            };
-          })(this)), 7000);
+          this._api(name);
+          return this.oneshot || this.$interval(this._api.bind(this, name), 7000);
         } else if (this instanceof OO.Widget) {
           this._listen(name);
           return this.$scope.db[name].store.info().then((function(_this) {
@@ -250,7 +248,8 @@
         this.$scope.db[name].busy = true;
         return this.$scope.db[name].handle.get().$promise.then((function(_this) {
           return function(data) {
-            _this._store(name, data);
+            var _ref;
+            _this._store(name, (_ref = data[name]) != null ? _ref : data);
             return _this.$scope.db[name].busy = false;
           };
         })(this));

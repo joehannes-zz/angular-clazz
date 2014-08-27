@@ -111,7 +111,7 @@ Widget Controllers listen to that db-collections and transform and store that ad
 
 Create the DB and initiate on Controller-Type
 
-			_createDB: (api, name, @volatile = false) ->
+			_createDB: (api, name, @volatile = false, @oneshot = false) ->
 				@$scope.db ?= {}
 				@api ?= {}
 				@$scope.db[name] =
@@ -120,7 +120,9 @@ Create the DB and initiate on Controller-Type
 					raw: []
 					store: @volatile and [] or _DB.create name
 
-				if @ instanceof OO.View then @$interval (() => @_api(name)), 7000
+				if @ instanceof OO.View
+					@_api(name)
+					@oneshot or @$interval @_api.bind(@, name), 7000
 				else if @ instanceof OO.Widget
 					@_listen name
 					@$scope.db[name].store.info()
@@ -137,7 +139,7 @@ AJAX Mechanism
 				if @$scope.db[name].busy is true then return
 				@$scope.db[name].busy = true
 				@$scope.db[name].handle.get().$promise.then (data) =>
-					@_store name, data
+					@_store name, (data[name] ? data)
 					@$scope.db[name].busy = false
 
 Storage Mechanism
