@@ -201,71 +201,106 @@
       return Ctrl;
 
     })(OO.Injectable);
-    OO.DB = (function(_super) {
-      __extends(DB, _super);
+    OO.Service = (function(_super) {
+      __extends(Service, _super);
 
-      function DB() {
-        return DB.__super__.constructor.apply(this, arguments);
+      Service.register = function(app, name) {
+        var _ref2;
+        if (name == null) {
+          name = this.name || ((_ref2 = this.toString().match(/function\s*(.*?)\(/)) != null ? _ref2[1] : void 0);
+        }
+        if (typeof app === "string") {
+          angular.module(app).service(name, this);
+        } else {
+          app.service(name, this);
+        }
+        return this;
+      };
+
+      function Service() {
+        var args, index, key, _i, _len, _ref2;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        _ref2 = this.constructor.$inject;
+        for (index = _i = 0, _len = _ref2.length; _i < _len; index = ++_i) {
+          key = _ref2[index];
+          this[key] = args[index];
+        }
+        if (typeof this.initialize === "function") {
+          this.initialize();
+        }
       }
 
-      DB.inject("$resource", "$interval");
+      return Service;
 
-      DB.prototype._createDB = function(api, name, volatile, oneshot) {
+    })(OO.Injectable);
+    OO.DataService = (function(_super) {
+      __extends(DataService, _super);
+
+      function DataService() {
+        return DataService.__super__.constructor.apply(this, arguments);
+      }
+
+      DataService.inject("$resource", "$interval");
+
+      DataService.prototype._db = function(api, name, volatile, oneshot) {
         var _base;
         this.volatile = volatile != null ? volatile : false;
         this.oneshot = oneshot != null ? oneshot : false;
-        if ((_base = this.$scope).db == null) {
-          _base.db = {};
+        if (this.db == null) {
+          this.db = {};
         }
-        if (this.api == null) {
-          this.api = {};
+        if (this._q == null) {
+          this._q = {};
         }
-        this.$scope.db[name] = {
+        if (this._q[name] != null) {
+          return false;
+        }
+        if ((_base = this._q)[name] == null) {
+          _base[name] = this.$q.defer();
+        }
+        this.db[name] = {
           busy: false,
           handle: api != null ? this.$resource(api) : null,
           raw: [],
           store: this.volatile && [] || _DB.create(name)
         };
-        if (this instanceof OO.View) {
-          this._api(name);
-          return this.oneshot || this.$interval(this._api.bind(this, name), 7000);
-        } else if (this instanceof OO.Widget) {
-          this._listen(name);
-          return this.$scope.db[name].store.info().then((function(_this) {
-            return function(info) {
-              if (parseInt(info.doc_count) === 0) {
-                return _this._api(name);
-              } else {
-                return _this._broadcast(name, {
-                  db: _this.$scope.db[name].store,
-                  doc: [],
-                  count: parseInt(info.doc_count)
-                });
-              }
-            };
-          })(this))["catch"](function(err) {
-            console.log("error in db " + name + " while trying to see if it existed already ...");
-            throw err.toString();
-          });
-        }
+        this._api(name);
+        return this.oneshot || this.$interval(this._api.bind(this, name), 7000);
       };
 
-      DB.prototype._api = function(name) {
-        if (this.$scope.db[name].busy === true) {
+      DataService.prototype._api = function(name) {
+        if (this.db[name].busy === true) {
           return;
         }
-        this.$scope.db[name].busy = true;
-        return this.$scope.db[name].handle.get().$promise.then((function(_this) {
+        this.db[name].busy = true;
+        return this.db[name].handle.get().$promise.then((function(_this) {
           return function(data) {
             var _ref2;
             _this._store(name, (_ref2 = data[name]) != null ? _ref2 : data);
-            return _this.$scope.db[name].busy = false;
+            _this.db[name].busy = false;
+            if (_this.volatile) {
+              if (_this.oneshot === true) {
+                _this._q[name].resolve();
+                return _this._q[name] = null;
+              } else {
+                return _this._q[name].notify(true);
+              }
+            }
+          };
+        })(this))["catch"]((function(_this) {
+          return function(err) {
+            if (_this.oneshot === true) {
+              _this._q[name].reject();
+              return _this._q[name] = null;
+            } else {
+              return _this._q[name].notify(false);
+            }
           };
         })(this));
       };
 
-      DB.prototype._store = function(name, data) {
-        var o, _fn, _i, _j, _k, _len, _len1, _len2, _ref2, _ref3, _ref4, _results;
+      DataService.prototype._store = function(name, data) {
+        var o, _i, _j, _k, _len, _len1, _len2, _ref2, _ref3, _ref4, _results, _results1;
         data = (_ref2 = (_ref3 = data.contents) != null ? _ref3 : data.content) != null ? _ref2 : data;
         if (!this.volatile) {
           _results = [];
@@ -273,7 +308,7 @@
             o = data[_i];
             _results.push((function(_this) {
               return function(o) {
-                return _this.$scope.db[name].store.query(function(doc, emit) {
+                return _this.db[name].store.query(function(doc, emit) {
                   if (doc.id === o.id) {
                     return emit(doc);
                   }
@@ -289,15 +324,21 @@
                 })["finally"](function() {
                   var args;
                   args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-                  return _this.$scope.db[name].store.put(o, o.id, o._rev).then(function(response) {
-                    return _this._broadcast(name, {
-                      db: _this.$scope.db[name].store,
-                      doc: [o],
-                      count: 1
-                    });
+                  return _this.db[name].store.put(o, o.id, o._rev).then(function(response) {
+                    if (_this.oneshot === true) {
+                      _this._q[name].resolve();
+                      return _this._q[name] = null;
+                    } else {
+                      return _this._q[name].notify(true);
+                    }
                   })["catch"](function(err) {
                     console.warn("db error: couldn't put " + (o.toString()));
-                    throw err.toString();
+                    if (_this.oneshot === true) {
+                      _this._q[name].reject();
+                      return _this._q[name] = null;
+                    } else {
+                      return _this._q[name].notify(false);
+                    }
                   });
                 });
               };
@@ -305,81 +346,40 @@
           }
           return _results;
         } else {
-          _ref4 = this.$scope.db[name].store;
+          _ref4 = this.db[name].store;
           for (_j = 0, _len1 = _ref4.length; _j < _len1; _j++) {
             o = _ref4[_j];
             o.deleted = true;
           }
-          _fn = (function(_this) {
-            return function(o) {
-              var i, k, v;
-              if ((i = _this.$scope.db[name].store.findIndex(function(el) {
-                return el.id === o.id;
-              })) !== -1) {
-                for (k in o) {
-                  if (!__hasProp.call(o, k)) continue;
-                  v = o[k];
-                  _this.$scope.db[name].store[i][k] = o[k];
-                }
-                return _this.$scope.db[name].store[i].deleted = false;
-              } else {
-                _this.$scope.db[name].store.push(o);
-                return _this.$scope.db[name].store[_this.$scope.db[name].store.length - 1].deleted = false;
-              }
-            };
-          })(this);
+          _results1 = [];
           for (_k = 0, _len2 = data.length; _k < _len2; _k++) {
             o = data[_k];
-            _fn(o);
+            _results1.push((function(_this) {
+              return function(o) {
+                var i, k, v;
+                if ((i = _this.db[name].store.findIndex(function(el) {
+                  return el.id === o.id;
+                })) !== -1) {
+                  for (k in o) {
+                    if (!__hasProp.call(o, k)) continue;
+                    v = o[k];
+                    _this.db[name].store[i][k] = o[k];
+                  }
+                  return _this.db[name].store[i].deleted = false;
+                } else {
+                  _this.db[name].store.push(o);
+                  return _this.db[name].store[_this.db[name].store.length - 1].deleted = false;
+                }
+              };
+            })(this)(o));
           }
-          return this._broadcast(name, {
-            db: this.$scope.db[name].store,
-            doc: data,
-            count: data.length
-          });
+          return _results1;
         }
       };
 
-      DB.prototype._broadcast = function(name, data) {
-        return this.$scope.$broadcast("db.changed." + name, data);
-      };
+      return DataService;
 
-      DB.prototype._listen = function(name) {
-        return this.$scope.$on("db.changed." + name, (function(_this) {
-          return function() {
-            var args, ev;
-            ev = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-            args.unshift(name);
-            return _this._transform.apply(_this, args);
-          };
-        })(this));
-      };
-
-      return DB;
-
-    })(OO.Injectable);
-    OO.View = (function(_super) {
-      __extends(View, _super);
-
-      function View() {
-        return View.__super__.constructor.apply(this, arguments);
-      }
-
-      View.inject();
-
-      return View;
-
-    })(OO.Ctrl);
-    OO.DynamicView = (function(_super) {
-      __extends(DynamicView, _super);
-
-      function DynamicView() {
-        return DynamicView.__super__.constructor.apply(this, arguments);
-      }
-
-      return DynamicView;
-
-    })(OO.View.mixin(OO.DB));
+    })(OO.Service);
     OO.Widget = (function(_super) {
       __extends(Widget, _super);
 
@@ -392,16 +392,6 @@
       return Widget;
 
     })(OO.Ctrl);
-    OO.DynamicWidget = (function(_super) {
-      __extends(DynamicWidget, _super);
-
-      function DynamicWidget() {
-        return DynamicWidget.__super__.constructor.apply(this, arguments);
-      }
-
-      return DynamicWidget;
-
-    })(OO.Widget.mixin(OO.DB)["implements"]("_transform"));
     this.$get = function() {
       return OO;
     };

@@ -107,47 +107,63 @@ Quasi-Constructor = Initialization of child classes as it is advised to not writ
 
 				@initialize?()
 
+		class OO.Service extends OO.Injectable
+			@register: (app, name) ->
+				name ?= @name or @toString().match(/function\s*(.*?)\(/)?[1]
+				if typeof app is "string" then angular.module(app).service name, @
+				else app.service name, @
+				@		
+			constructor: (args...) ->
+				(@[key] = args[index]) for key, index in @constructor.$inject
+				@initialize?()
+
 DB Functionality, utilizing Pouch DB with a localStorage Adapter, encapsulating flow into two Controller Types:
 * View Controllers and Deriveds
 * Widget Controllers and Deriveds
 View Controllers are Main Page Controllers of an Angular Route, they hold all DBs and therefor dynamic Data of the Page
 Widget Controllers listen to that db-collections and transform and store that adapted data into their own local dbs
 
-		class OO.DB extends OO.Injectable
+		class OO.DataService extends OO.Service
 			@inject "$resource", "$interval"
 
-Create the DB and initiate on Controller-Type
+Create the DB
 
-			_createDB: (api, name, @volatile = false, @oneshot = false) ->
-				@$scope.db ?= {}
-				@api ?= {}
-				@$scope.db[name] =
+			_db: (api, name, @volatile = false, @oneshot = false) ->
+				@db ?= {}
+				@_q ?= {}
+				if @_q[name]? then return false
+				@_q[name] ?= @$q.defer()
+				@db[name] =
 					busy: false
 					handle: if api? then @$resource api else null
 					raw: []
 					store: @volatile and [] or _DB.create name
+			
+				@_api(name)
+				@oneshot or @$interval @_api.bind(@, name), 7000
 
-				if @ instanceof OO.View
-					@_api(name)
-					@oneshot or @$interval @_api.bind(@, name), 7000
-				else if @ instanceof OO.Widget
-					@_listen name
-					@$scope.db[name].store.info()
-						.then (info) =>
-							if parseInt(info.doc_count) is 0 then @_api(name)
-							else @_broadcast name, { db: @$scope.db[name].store, doc: [], count: parseInt(info.doc_count) }
-						.catch (err) ->
-							console.log "error in db #{name} while trying to see if it existed already ..."
-							throw err.toString()
 
 AJAX Mechanism
 
 			_api: (name) ->
-				if @$scope.db[name].busy is true then return
-				@$scope.db[name].busy = true
-				@$scope.db[name].handle.get().$promise.then (data) =>
-					@_store name, (data[name] ? data)
-					@$scope.db[name].busy = false
+				if @db[name].busy is true then return
+				@db[name].busy = true
+				@db[name].handle.get().$promise
+					.then (data) =>
+						@_store name, (data[name] ? data)
+						@db[name].busy = false
+						if @volatile
+							if @oneshot is true 
+								@_q[name].resolve()
+								@_q[name] = null
+							else @_q[name].notify(true)
+					.catch (err) =>
+						if @oneshot is true 
+							@_q[name].reject()
+							@_q[name] = null
+						else 
+							@_q[name].notify(false)
+
 
 Storage Mechanism
 
@@ -156,7 +172,7 @@ Storage Mechanism
 				if not @volatile
 					for o in data
 						do (o) =>
-							@$scope.db[name].store.query((doc, emit) -> if doc.id is o.id then emit doc)
+							@db[name].store.query((doc, emit) -> if doc.id is o.id then emit doc)
 								.then (doc) =>
 									console.info '#Data for id _#{o.id}_ will be updated now'
 									if doc.error isnt "not_found" and doc.total_rows is 1
@@ -166,46 +182,32 @@ Storage Mechanism
 									console.warn "db error: couldn't query for #{o.id}"
 									throw err.toString()
 								.finally (args...) =>
-									@$scope.db[name].store.put(o, o.id, o._rev)
-										.then (response) => @_broadcast name, { db: @$scope.db[name].store, doc: [o], count: 1 }
+									@db[name].store.put(o, o.id, o._rev)
+										.then (response) =>
+											if @oneshot is true 
+												@_q[name].resolve()
+												@_q[name] = null
+											else @_q[name].notify(true)
 										.catch (err) =>
 											console.warn "db error: couldn't put #{o.toString()}"
-											throw err.toString()
+											if @oneshot is true 
+												@_q[name].reject()
+												@_q[name] = null
+											else 
+												@_q[name].notify(false)
 				else
-					(o.deleted = true) for o in @$scope.db[name].store
+					(o.deleted = true) for o in @db[name].store
 					for o in data
 						do (o) =>
-							if (i = @$scope.db[name].store.findIndex((el) -> el.id is o.id)) isnt -1
-								(@$scope.db[name].store[i][k] = o[k]) for own k, v of o
-								@$scope.db[name].store[i].deleted = false
+							if (i = @db[name].store.findIndex((el) -> el.id is o.id)) isnt -1
+								(@db[name].store[i][k] = o[k]) for own k, v of o
+								@db[name].store[i].deleted = false
 							else 
-								@$scope.db[name].store.push o
-								@$scope.db[name].store[@$scope.db[name].store.length - 1].deleted = false
-					@_broadcast name, { db: @$scope.db[name].store, doc: data, count: data.length }
-
-Broadcast mechanism - View Ctrls only
-
-			_broadcast: (name, data) -> @$scope.$broadcast "db.changed.#{name}", data
-
-Listen mechanism - Widget Ctrls only
-
-			_listen: (name) ->
-				@$scope.$on "db.changed.#{name}", (ev, args...) =>
-					args.unshift name
-					@_transform.apply @, args
-
-		class OO.View extends OO.Ctrl
-			@inject()
-
-		class OO.DynamicView extends OO.View
-		.mixin OO.DB
+								@db[name].store.push o
+								@db[name].store[@db[name].store.length - 1].deleted = false
 
 		class OO.Widget extends OO.Ctrl
 			@inject "$element"
-
-		class OO.DynamicWidget extends OO.Widget
-		.mixin OO.DB
-		.implements "_transform"
 
 		@$get = () -> OO
 
