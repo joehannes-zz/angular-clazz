@@ -131,12 +131,11 @@ Create the DB
 			_db: (api, { @name, @persistant, @oneshot, @interval}) ->
 				@persistant ?= false
 				@oneshot = not @interval?
-				@db ?= {}
 				@q ?= @$q.defer()
 				@db =
 					busy: false
+					ready: false
 					handle: if api? then @$resource api else null
-					raw: []
 					store: @persistant and _DB.create(@name) or []
 			
 				@_api()
@@ -204,6 +203,7 @@ Storage Mechanism
 							else 
 								@db.store.push o
 								@db.store[@db.store.length - 1].deleted = false
+				@db.ready = true
 
 		class OO.Widget extends OO.Ctrl
 			@inject "$element"
