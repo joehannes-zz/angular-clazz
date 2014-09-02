@@ -124,55 +124,52 @@ View Controllers are Main Page Controllers of an Angular Route, they hold all DB
 Widget Controllers listen to that db-collections and transform and store that adapted data into their own local dbs
 
 		class OO.DataService extends OO.Service
-			@inject "$resource", "$interval"
+			@inject "$resource", "$interval", "$q"
 
 Create the DB
 
-			_db: (api, name, @volatile = false, @oneshot = false) ->
+			_db: (api, @persistant = false, @oneshot = false) ->
 				@db ?= {}
-				@_q ?= {}
-				if @_q[name]? then return false
-				@_q[name] ?= @$q.defer()
-				@db[name] =
+				@q ?= @$q.defer()
+				@db =
 					busy: false
 					handle: if api? then @$resource api else null
 					raw: []
-					store: @volatile and [] or _DB.create name
+					store: @persistant and _DB.create(@persistant) or []
 			
-				@_api(name)
-				@oneshot or @$interval @_api.bind(@, name), 7000
-
+				@_api()
+				@oneshot or @$interval @_api.bind(@), 7000
+				@q.promise
 
 AJAX Mechanism
 
-			_api: (name) ->
-				if @db[name].busy is true then return
-				@db[name].busy = true
-				@db[name].handle.get().$promise
+			_api: () ->
+				if @db.busy is true then return
+				@db.busy = true
+				@db.handle.get().$promise
 					.then (data) =>
-						@_store name, (data[name] ? data)
-						@db[name].busy = false
-						if @volatile
+						@_store(@persistant and data[@persistant] or data)
+						@db.busy = false
+						if not @persistant
 							if @oneshot is true 
-								@_q[name].resolve()
-								@_q[name] = null
-							else @_q[name].notify(true)
+								@q.resolve()
+								@q = null
+							else @q.notify(true)
 					.catch (err) =>
 						if @oneshot is true 
-							@_q[name].reject()
-							@_q[name] = null
+							@q.reject()
+							@q = null
 						else 
-							@_q[name].notify(false)
+							@q.notify(false)
 
 
 Storage Mechanism
 
-			_store: (name, data) ->
-				data = data.contents ? data.content ? data
+			_store: (data) ->
 				if not @volatile
 					for o in data
 						do (o) =>
-							@db[name].store.query((doc, emit) -> if doc.id is o.id then emit doc)
+							@db.store.query((doc, emit) -> if doc.id is o.id then emit doc)
 								.then (doc) =>
 									console.info '#Data for id _#{o.id}_ will be updated now'
 									if doc.error isnt "not_found" and doc.total_rows is 1
@@ -182,29 +179,29 @@ Storage Mechanism
 									console.warn "db error: couldn't query for #{o.id}"
 									throw err.toString()
 								.finally (args...) =>
-									@db[name].store.put(o, o.id, o._rev)
+									@db.store.put(o, o.id, o._rev)
 										.then (response) =>
 											if @oneshot is true 
-												@_q[name].resolve()
-												@_q[name] = null
-											else @_q[name].notify(true)
+												@q.resolve()
+												@q = null
+											else @q.notify(true)
 										.catch (err) =>
 											console.warn "db error: couldn't put #{o.toString()}"
 											if @oneshot is true 
-												@_q[name].reject()
-												@_q[name] = null
+												@q.reject()
+												@q = null
 											else 
-												@_q[name].notify(false)
+												@q.notify(false)
 				else
-					(o.deleted = true) for o in @db[name].store
+					(o.deleted = true) for o in @db.store
 					for o in data
 						do (o) =>
-							if (i = @db[name].store.findIndex((el) -> el.id is o.id)) isnt -1
-								(@db[name].store[i][k] = o[k]) for own k, v of o
-								@db[name].store[i].deleted = false
+							if (i = @db.store.findIndex((el) -> el.id is o.id)) isnt -1
+								(@db.store[i][k] = o[k]) for own k, v of o
+								@db.store[i].deleted = false
 							else 
-								@db[name].store.push o
-								@db[name].store[@db[name].store.length - 1].deleted = false
+								@db.store.push o
+								@db.store[@db.store.length - 1].deleted = false
 
 		class OO.Widget extends OO.Ctrl
 			@inject "$element"
