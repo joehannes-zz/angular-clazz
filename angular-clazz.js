@@ -242,9 +242,14 @@
 
       DataService.inject("$resource", "$interval", "$q");
 
-      DataService.prototype._db = function(api, persistant, oneshot) {
-        this.persistant = persistant != null ? persistant : false;
-        this.oneshot = oneshot != null ? oneshot : false;
+      DataService.prototype._db = function(api, _arg) {
+        this.name = _arg.name, this.persistant = _arg.persistant, this.oneshot = _arg.oneshot;
+        if (this.persistnat == null) {
+          this.persistnat = false;
+        }
+        if (this.oneshot == null) {
+          this.oneshot = false;
+        }
         if (this.db == null) {
           this.db = {};
         }
@@ -255,7 +260,7 @@
           busy: false,
           handle: api != null ? this.$resource(api) : null,
           raw: [],
-          store: this.persistant && _DB.create(this.persistant) || []
+          store: this.persistant && _DB.create(this.name) || []
         };
         this._api();
         this.oneshot || this.$interval(this._api.bind(this), 7000);
@@ -269,7 +274,8 @@
         this.db.busy = true;
         return this.db.handle.get().$promise.then((function(_this) {
           return function(data) {
-            _this._store(_this.persistant && data[_this.persistant] || data);
+            var _ref2;
+            _this._store((_ref2 = data[_this.name]) != null ? _ref2 : data);
             _this.db.busy = false;
             if (!_this.persistant) {
               if (_this.oneshot === true) {

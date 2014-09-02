@@ -128,14 +128,16 @@ Widget Controllers listen to that db-collections and transform and store that ad
 
 Create the DB
 
-			_db: (api, @persistant = false, @oneshot = false) ->
+			_db: (api, { @name, @persistant, @oneshot}) ->
+				@persistnat ?= false
+				@oneshot ?= false
 				@db ?= {}
 				@q ?= @$q.defer()
 				@db =
 					busy: false
 					handle: if api? then @$resource api else null
 					raw: []
-					store: @persistant and _DB.create(@persistant) or []
+					store: @persistant and _DB.create(@name) or []
 			
 				@_api()
 				@oneshot or @$interval @_api.bind(@), 7000
@@ -148,7 +150,7 @@ AJAX Mechanism
 				@db.busy = true
 				@db.handle.get().$promise
 					.then (data) =>
-						@_store(@persistant and data[@persistant] or data)
+						@_store(data[@name] ? data)
 						@db.busy = false
 						if not @persistant
 							if @oneshot is true 
