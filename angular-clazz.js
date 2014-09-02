@@ -243,13 +243,11 @@
       DataService.inject("$resource", "$interval", "$q");
 
       DataService.prototype._db = function(api, _arg) {
-        this.name = _arg.name, this.persistant = _arg.persistant, this.oneshot = _arg.oneshot;
-        if (this.persistnat == null) {
-          this.persistnat = false;
+        this.name = _arg.name, this.persistant = _arg.persistant, this.oneshot = _arg.oneshot, this.interval = _arg.interval;
+        if (this.persistant == null) {
+          this.persistant = false;
         }
-        if (this.oneshot == null) {
-          this.oneshot = false;
-        }
+        this.oneshot = this.interval == null;
         if (this.db == null) {
           this.db = {};
         }
@@ -263,7 +261,7 @@
           store: this.persistant && _DB.create(this.name) || []
         };
         this._api();
-        this.oneshot || this.$interval(this._api.bind(this), 7000);
+        this.oneshot || this.$interval(this._api.bind(this), this.interval);
         return this.q.promise;
       };
 
