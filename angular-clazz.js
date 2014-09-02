@@ -240,75 +240,67 @@
         return DataService.__super__.constructor.apply(this, arguments);
       }
 
-      DataService.inject("$resource", "$interval");
+      DataService.inject("$resource", "$interval", "$q");
 
-      DataService.prototype._db = function(api, name, volatile, oneshot) {
-        var _base;
-        this.volatile = volatile != null ? volatile : false;
+      DataService.prototype._db = function(api, persistant, oneshot) {
+        this.persistant = persistant != null ? persistant : false;
         this.oneshot = oneshot != null ? oneshot : false;
         if (this.db == null) {
           this.db = {};
         }
-        if (this._q == null) {
-          this._q = {};
+        if (this.q == null) {
+          this.q = this.$q.defer();
         }
-        if (this._q[name] != null) {
-          return false;
-        }
-        if ((_base = this._q)[name] == null) {
-          _base[name] = this.$q.defer();
-        }
-        this.db[name] = {
+        this.db = {
           busy: false,
           handle: api != null ? this.$resource(api) : null,
           raw: [],
-          store: this.volatile && [] || _DB.create(name)
+          store: this.persistant && _DB.create(this.persistant) || []
         };
-        this._api(name);
-        return this.oneshot || this.$interval(this._api.bind(this, name), 7000);
+        this._api();
+        this.oneshot || this.$interval(this._api.bind(this), 7000);
+        return this.q.promise;
       };
 
-      DataService.prototype._api = function(name) {
-        if (this.db[name].busy === true) {
+      DataService.prototype._api = function() {
+        if (this.db.busy === true) {
           return;
         }
-        this.db[name].busy = true;
-        return this.db[name].handle.get().$promise.then((function(_this) {
+        this.db.busy = true;
+        return this.db.handle.get().$promise.then((function(_this) {
           return function(data) {
-            var _ref2;
-            _this._store(name, (_ref2 = data[name]) != null ? _ref2 : data);
-            _this.db[name].busy = false;
-            if (_this.volatile) {
+            _this._store(_this.persistant && data[_this.persistant] || data);
+            _this.db.busy = false;
+            if (!_this.persistant) {
               if (_this.oneshot === true) {
-                _this._q[name].resolve();
-                return _this._q[name] = null;
+                _this.q.resolve();
+                return _this.q = null;
               } else {
-                return _this._q[name].notify(true);
+                return _this.q.notify(true);
               }
             }
           };
         })(this))["catch"]((function(_this) {
           return function(err) {
             if (_this.oneshot === true) {
-              _this._q[name].reject();
-              return _this._q[name] = null;
+              _this.q.reject();
+              return _this.q = null;
             } else {
-              return _this._q[name].notify(false);
+              return _this.q.notify(false);
             }
           };
         })(this));
       };
 
-      DataService.prototype._store = function(name, data) {
-        var o, _i, _j, _k, _len, _len1, _len2, _ref2, _ref3, _ref4, _results, _results1;
-        data = (_ref2 = (_ref3 = data.contents) != null ? _ref3 : data.content) != null ? _ref2 : data;
+      DataService.prototype._store = function(data) {
+        var o, _i, _j, _k, _len, _len1, _len2, _ref2, _results, _results1;
         if (!this.volatile) {
           _results = [];
           for (_i = 0, _len = data.length; _i < _len; _i++) {
             o = data[_i];
             _results.push((function(_this) {
               return function(o) {
-                return _this.db[name].store.query(function(doc, emit) {
+                return _this.db.store.query(function(doc, emit) {
                   if (doc.id === o.id) {
                     return emit(doc);
                   }
@@ -324,20 +316,20 @@
                 })["finally"](function() {
                   var args;
                   args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-                  return _this.db[name].store.put(o, o.id, o._rev).then(function(response) {
+                  return _this.db.store.put(o, o.id, o._rev).then(function(response) {
                     if (_this.oneshot === true) {
-                      _this._q[name].resolve();
-                      return _this._q[name] = null;
+                      _this.q.resolve();
+                      return _this.q = null;
                     } else {
-                      return _this._q[name].notify(true);
+                      return _this.q.notify(true);
                     }
                   })["catch"](function(err) {
                     console.warn("db error: couldn't put " + (o.toString()));
                     if (_this.oneshot === true) {
-                      _this._q[name].reject();
-                      return _this._q[name] = null;
+                      _this.q.reject();
+                      return _this.q = null;
                     } else {
-                      return _this._q[name].notify(false);
+                      return _this.q.notify(false);
                     }
                   });
                 });
@@ -346,9 +338,9 @@
           }
           return _results;
         } else {
-          _ref4 = this.db[name].store;
-          for (_j = 0, _len1 = _ref4.length; _j < _len1; _j++) {
-            o = _ref4[_j];
+          _ref2 = this.db.store;
+          for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+            o = _ref2[_j];
             o.deleted = true;
           }
           _results1 = [];
@@ -357,18 +349,18 @@
             _results1.push((function(_this) {
               return function(o) {
                 var i, k, v;
-                if ((i = _this.db[name].store.findIndex(function(el) {
+                if ((i = _this.db.store.findIndex(function(el) {
                   return el.id === o.id;
                 })) !== -1) {
                   for (k in o) {
                     if (!__hasProp.call(o, k)) continue;
                     v = o[k];
-                    _this.db[name].store[i][k] = o[k];
+                    _this.db.store[i][k] = o[k];
                   }
-                  return _this.db[name].store[i].deleted = false;
+                  return _this.db.store[i].deleted = false;
                 } else {
-                  _this.db[name].store.push(o);
-                  return _this.db[name].store[_this.db[name].store.length - 1].deleted = false;
+                  _this.db.store.push(o);
+                  return _this.db.store[_this.db.store.length - 1].deleted = false;
                 }
               };
             })(this)(o));
