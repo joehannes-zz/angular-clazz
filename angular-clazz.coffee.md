@@ -20,13 +20,19 @@ Credit for the base class goes to Elad Ossadon as seen on [devign.me](http://www
 
 		class OO.Injectable
 			@inject: (args...) ->
-				(args.push(injectee) if args.indexOf(injectee) is -1) for injectee in [(@$inject ? [])..., "$scope"]
+				(args.push(injectee) if args.indexOf(injectee) is -1) for injectee in [(@$inject ? [])...]
 				@$inject = args
 				@
 
 A Base Class for all Controllers
 
 		class OO.Ctrl extends OO.Injectable
+
+We need to focus, almost always, so let's default at least the scope in all our controllers
+
+			@inject "$scope"
+
+Providing a registering mechanism
 
 			@register: (app, name) ->
 				name ?= @name or @toString().match(/function\s*(.*?)\(/)?[1]
@@ -135,7 +141,7 @@ Create the DB
 				@db =
 					busy: false
 					ready: false
-					handle: if api? then @$resource api else null
+					handle: if api? then @$resource(api) else null
 					store: @persistant and _DB.create(@name) or []
 			
 				@_api()
@@ -145,10 +151,12 @@ Create the DB
 AJAX Mechanism
 
 			_api: () ->
+				console.log "api #{@name}"
 				if @db.busy is true then return
 				@db.busy = true
 				@db.handle.get().$promise
 					.then (data) =>
+						console.log "success #{@name}"
 						@_store(data[@name] ? data)
 						@db.busy = false
 						if not @persistant
@@ -156,7 +164,9 @@ AJAX Mechanism
 								@q.resolve()
 								@q = null
 							else @q.notify(true)
+						@db.ready = true
 					.catch (err) =>
+						console.log "err #{@name}"
 						if @oneshot is true 
 							@q.reject()
 							@q = null
@@ -167,7 +177,7 @@ AJAX Mechanism
 Storage Mechanism
 
 			_store: (data) ->
-				if not @volatile
+				if @persistant
 					for o in data
 						do (o) =>
 							@db.store.query((doc, emit) -> if doc.id is o.id then emit doc)
@@ -203,7 +213,6 @@ Storage Mechanism
 							else 
 								@db.store.push o
 								@db.store[@db.store.length - 1].deleted = false
-				@db.ready = true
 
 		class OO.Widget extends OO.Ctrl
 			@inject "$element"

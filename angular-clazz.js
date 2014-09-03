@@ -26,7 +26,7 @@
       Injectable.inject = function() {
         var args, injectee, _i, _len, _ref2, _ref3;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        _ref3 = __slice.call((_ref2 = this.$inject) != null ? _ref2 : []).concat(["$scope"]);
+        _ref3 = __slice.call((_ref2 = this.$inject) != null ? _ref2 : []);
         for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
           injectee = _ref3[_i];
           if (args.indexOf(injectee) === -1) {
@@ -42,6 +42,8 @@
     })();
     OO.Ctrl = (function(_super) {
       __extends(Ctrl, _super);
+
+      Ctrl.inject("$scope");
 
       Ctrl.register = function(app, name) {
         var _ref2;
@@ -263,6 +265,7 @@
       };
 
       DataService.prototype._api = function() {
+        console.log("api " + this.name);
         if (this.db.busy === true) {
           return;
         }
@@ -270,19 +273,22 @@
         return this.db.handle.get().$promise.then((function(_this) {
           return function(data) {
             var _ref2;
+            console.log("success " + _this.name);
             _this._store((_ref2 = data[_this.name]) != null ? _ref2 : data);
             _this.db.busy = false;
             if (!_this.persistant) {
               if (_this.oneshot === true) {
                 _this.q.resolve();
-                return _this.q = null;
+                _this.q = null;
               } else {
-                return _this.q.notify(true);
+                _this.q.notify(true);
               }
             }
+            return _this.db.ready = true;
           };
         })(this))["catch"]((function(_this) {
           return function(err) {
+            console.log("err " + _this.name);
             if (_this.oneshot === true) {
               _this.q.reject();
               return _this.q = null;
@@ -294,79 +300,80 @@
       };
 
       DataService.prototype._store = function(data) {
-        var o, _fn, _fn1, _i, _j, _k, _len, _len1, _len2, _ref2;
-        if (!this.volatile) {
-          _fn = (function(_this) {
-            return function(o) {
-              return _this.db.store.query(function(doc, emit) {
-                if (doc.id === o.id) {
-                  return emit(doc);
-                }
-              }).then(function(doc) {
-                console.info('#Data for id _#{o.id}_ will be updated now');
-                if (doc.error !== "not_found" && doc.total_rows === 1) {
-                  o._id = doc.rows[0].key._id;
-                  return o._rev = doc.rows[0].key._rev;
-                }
-              })["catch"](function(err) {
-                console.warn("db error: couldn't query for " + o.id);
-                throw err.toString();
-              })["finally"](function() {
-                var args;
-                args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-                return _this.db.store.put(o, o.id, o._rev).then(function(response) {
-                  if (_this.oneshot === true) {
-                    _this.q.resolve();
-                    return _this.q = null;
-                  } else {
-                    return _this.q.notify(true);
-                  }
-                })["catch"](function(err) {
-                  console.warn("db error: couldn't put " + (o.toString()));
-                  if (_this.oneshot === true) {
-                    _this.q.reject();
-                    return _this.q = null;
-                  } else {
-                    return _this.q.notify(false);
-                  }
-                });
-              });
-            };
-          })(this);
+        var o, _i, _j, _k, _len, _len1, _len2, _ref2, _results, _results1;
+        if (this.persistant) {
+          _results = [];
           for (_i = 0, _len = data.length; _i < _len; _i++) {
             o = data[_i];
-            _fn(o);
+            _results.push((function(_this) {
+              return function(o) {
+                return _this.db.store.query(function(doc, emit) {
+                  if (doc.id === o.id) {
+                    return emit(doc);
+                  }
+                }).then(function(doc) {
+                  console.info('#Data for id _#{o.id}_ will be updated now');
+                  if (doc.error !== "not_found" && doc.total_rows === 1) {
+                    o._id = doc.rows[0].key._id;
+                    return o._rev = doc.rows[0].key._rev;
+                  }
+                })["catch"](function(err) {
+                  console.warn("db error: couldn't query for " + o.id);
+                  throw err.toString();
+                })["finally"](function() {
+                  var args;
+                  args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+                  return _this.db.store.put(o, o.id, o._rev).then(function(response) {
+                    if (_this.oneshot === true) {
+                      _this.q.resolve();
+                      return _this.q = null;
+                    } else {
+                      return _this.q.notify(true);
+                    }
+                  })["catch"](function(err) {
+                    console.warn("db error: couldn't put " + (o.toString()));
+                    if (_this.oneshot === true) {
+                      _this.q.reject();
+                      return _this.q = null;
+                    } else {
+                      return _this.q.notify(false);
+                    }
+                  });
+                });
+              };
+            })(this)(o));
           }
+          return _results;
         } else {
           _ref2 = this.db.store;
           for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
             o = _ref2[_j];
             o.deleted = true;
           }
-          _fn1 = (function(_this) {
-            return function(o) {
-              var i, k, v;
-              if ((i = _this.db.store.findIndex(function(el) {
-                return el.id === o.id;
-              })) !== -1) {
-                for (k in o) {
-                  if (!__hasProp.call(o, k)) continue;
-                  v = o[k];
-                  _this.db.store[i][k] = o[k];
-                }
-                return _this.db.store[i].deleted = false;
-              } else {
-                _this.db.store.push(o);
-                return _this.db.store[_this.db.store.length - 1].deleted = false;
-              }
-            };
-          })(this);
+          _results1 = [];
           for (_k = 0, _len2 = data.length; _k < _len2; _k++) {
             o = data[_k];
-            _fn1(o);
+            _results1.push((function(_this) {
+              return function(o) {
+                var i, k, v;
+                if ((i = _this.db.store.findIndex(function(el) {
+                  return el.id === o.id;
+                })) !== -1) {
+                  for (k in o) {
+                    if (!__hasProp.call(o, k)) continue;
+                    v = o[k];
+                    _this.db.store[i][k] = o[k];
+                  }
+                  return _this.db.store[i].deleted = false;
+                } else {
+                  _this.db.store.push(o);
+                  return _this.db.store[_this.db.store.length - 1].deleted = false;
+                }
+              };
+            })(this)(o));
           }
+          return _results1;
         }
-        return this.db.ready = true;
       };
 
       return DataService;
