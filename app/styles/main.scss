@@ -1,0 +1,107 @@
+// bower:scss
+@import "compass-mixins/lib/_compass.scss";
+// endbower
+
+.browsehappy {
+  margin: 0.2em 0;
+  background: #ccc;
+  color: #000;
+  padding: 0.2em 0;
+}
+.ace_editor {
+  box-shadow: 0 0 15px 5px black;
+  border-radius: 5px;
+  border: 1px solid black;
+}
+.ace_editor:nth-child(2) {
+  height: 65px;
+}
+.ace_editor:nth-child(4) {
+  height: 150px;
+}
+.ace_editor:nth-child(6) {
+  height: 230px;
+}
+.ace_editor:nth-child(8) {
+  height: 130px;
+}
+.ace_editor:nth-child(10) {
+  height: 320px;
+}
+.ace_editor:nth-child(12) {
+  height: 400px;
+}
+.ace_editor:nth-child(14) {
+  height: 30px;
+}
+
+.stylish-letters {
+  font-family: 'Sacramento', cursive;
+}
+
+/* Space out content a bit */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+header {
+  position: relative;
+  @include background(linear-gradient(to bottom, rgba(gray, .5), rgba(silver, .5) 45% , rgba(gray, .5) 95%, rgba(red, .5)), image-url("/images/swirl_pattern.png"));
+  box-shadow: 0 0 15px 5px black;
+  z-index: 99;
+}
+
+h1.stylish-letters {
+  margin: 0 0 15px;
+  padding: 0;
+  font-size: 4rem;
+  text-align: center;
+  text-decoration: underline;
+}
+p.explanation {
+  margin-bottom: 15px;
+  padding: 15px;
+  @include background(image-url('/images/halftone.png'));
+  box-shadow: 0 0 10px 3px olive;
+  border-radius: 5px;
+  border: 1px solid white;
+  text-align: justify;
+}
+
+code {
+  padding: 2px 5px;
+  background-color: black;
+  color: green;
+}
+
+section {
+  position: relative;
+  box-shadow: 0 0 15px 5px black;
+}
+
+section:nth-child(1) {
+  @include background(linear-gradient(to bottom, rgba(gray, .5), rgba(silver, .5) 45% , rgba(gray, .5) 95%, rgba(teal, .5)), image-url("/images/skulls.png"));
+  z-index: 98;
+}
+
+.ui.items .item > .image > img {
+  width: auto !important;
+  height: 128px;
+  margin: 0 auto 0 auto;
+  padding: 15px 0 15px 0;
+  left: 0;
+  right: 0;
+}
+.ui.items .item > .content > .name {
+  text-align: center;
+}
+.ui.items .item > .content > p.description {
+  display: none;
+}
+.ui.items .item:hover > .content > p.description {
+  display: inherit !important;
+}
