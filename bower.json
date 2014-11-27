@@ -8,6 +8,7 @@
     "angular-animate": "^1.3.0",
     "angular-route": "^1.3.0",
     "angular-touch": "^1.3.0",
+    "angular-sanitize": "~1.3.4",
     "semantic-ui": "~0.19.3",
     "compass-mixins": "~1.0.2",
     "angular-ui-ace": "~0.1.1"

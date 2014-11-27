@@ -374,7 +374,7 @@ module.exports = function (grunt) {
             '*.{ico,png,txt}',
             '.htaccess',
             '*.html',
-            'views/{,*/}*.html',
+            '.tmp/views/{,*/}*.html',
             'images/{,*/}*.{webp}',
             'fonts/{,*/}*.*'
           ]
@@ -397,6 +397,7 @@ module.exports = function (grunt) {
     concurrent: {
       server: [
         'coffee:dist',
+        'jade',
         'compass:server'
       ],
       test: [

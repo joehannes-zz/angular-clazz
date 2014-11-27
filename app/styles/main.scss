@@ -105,3 +105,11 @@ section:nth-child(1) {
 .ui.items .item:hover > .content > p.description {
   display: inherit !important;
 }
+
+.pull-up-margin {
+    position: absolute !important;
+    margin-top: -3rem !important;
+    &.ribbon {
+        margin-left: 10px !important;
+    }
+}

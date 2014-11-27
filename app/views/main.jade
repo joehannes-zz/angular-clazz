@@ -43,6 +43,7 @@ header(ngModel="ace")
           .image
             img(src="images/joehannes.png")
             a.like.blue.ui.corner.label: i.star.icon
+            .ui.pull-up-margin.blue.ribbon.label Hand me a fork!
           .content
             .name.stylish-letters Clazz
             p.description
@@ -56,14 +57,19 @@ header(ngModel="ace")
               h3
                 | Star it, Fork it, if you want to share the happiness!
                 em  Play around, if you do Angular & CS  & 💗 OO, then give it a shot!
-              .ui.blue.ribbon.label Hand me a fork!
     .two.wide.column &nbsp;
 main
-  section.intro.ui.grid
-    .two.wide.column &nbsp;
-    .twelve.wide.column
-        h1.stylish-letters - prelude -
-        article(ng-model="item.injectable" ui-ace="{ useWrapMode: true, showGutter: true, theme: 'twilight', mode: 'coffee', onLoad: aceLoaded }" readonly="true" ng-repeat-start="item in prelude")
-        p.explanation(ng-repeat-end) {{item.explanation}}
-          
-    .two.wide.column &nbsp;
+    section.intro.ui.grid
+        .two.wide.column &nbsp;
+        .twelve.wide.column
+            h1.stylish-letters - prelude -
+            article(ng-model="item.injectable" ui-ace="{ useWrapMode: true, showGutter: true, theme: 'twilight', mode: 'coffee', onLoad: aceLoaded }" readonly="true" ng-repeat-start="item in prelude")
+            p.explanation(ng-repeat-end ng-bind-html="item.explanation")
+        .two.wide.column &nbsp;
+    section.action.ui.grid
+        .two.wide.column &nbsp;
+        .twelve.wide.column
+            h1.stylish-letters - action -
+            p.explanation(ng-repeat-start="item in action" ng-bind-html="item.explanation")
+            article(ng-model="item.injectable" ui-ace="{ useWrapMode: true, showGutter: true, theme: 'twilight', mode: 'coffee', onLoad: aceLoaded }" readonly="true" ng-repeat-end)
+        .two.wide.column &nbsp;
