@@ -13,26 +13,39 @@
   border-radius: 5px;
   border: 1px solid black;
 }
-.ace_editor:nth-child(2) {
-  height: 65px;
+section.intro article.ace_editor {
+    &:nth-child(2) {
+      height: 65px;
+    }
+    &:nth-child(4) {
+      height: 150px;
+    }
+    &:nth-child(6) {
+      height: 230px;
+    }
+    &:nth-child(8) {
+      height: 130px;
+    }
+    &:nth-child(10) {
+      height: 320px;
+    }
+    &:nth-child(12) {
+      height: 400px;
+    }
+    &:nth-child(14) {
+      height: 30px;
+    }
 }
-.ace_editor:nth-child(4) {
-  height: 150px;
-}
-.ace_editor:nth-child(6) {
-  height: 230px;
-}
-.ace_editor:nth-child(8) {
-  height: 130px;
-}
-.ace_editor:nth-child(10) {
-  height: 320px;
-}
-.ace_editor:nth-child(12) {
-  height: 400px;
-}
-.ace_editor:nth-child(14) {
-  height: 30px;
+section.action article.ace_editor {
+    &:nth-child(3) {
+        height: 15px;
+    }
+    &:nth-child(5) {
+        height: 125px;
+    }
+    &:nth-child(7) {
+        height: 440px;
+    }
 }
 
 .stylish-letters {
@@ -83,9 +96,14 @@ section {
   box-shadow: 0 0 15px 5px black;
 }
 
-section:nth-child(1) {
+section.intro{
   @include background(linear-gradient(to bottom, rgba(gray, .5), rgba(silver, .5) 45% , rgba(gray, .5) 95%, rgba(teal, .5)), image-url("/images/skulls.png"));
   z-index: 98;
+}
+
+section.action{
+    @include background(linear-gradient(to bottom, rgba(gray, .5), rgba(silver, .5) 45% , rgba(gray, .5) 95%, rgba(navy, .5)), image-url("/images/symphony.png"));
+    z-index: 97;
 }
 
 .ui.items .item > .image > img {

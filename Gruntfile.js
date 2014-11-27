@@ -168,7 +168,7 @@ module.exports = function (grunt) {
     },
     // Compiles Jade to HTML
     jade: {
-      compile: {
+      dist: {
         options: {
           pretty: true
         },
@@ -374,7 +374,7 @@ module.exports = function (grunt) {
             '*.{ico,png,txt}',
             '.htaccess',
             '*.html',
-            '.tmp/views/{,*/}*.html',
+            'views/{,*/}*.html',
             'images/{,*/}*.{webp}',
             'fonts/{,*/}*.*'
           ]
@@ -383,6 +383,11 @@ module.exports = function (grunt) {
           cwd: '.tmp/images',
           dest: '<%= yeoman.dist %>/images',
           src: ['generated/*']
+        },{
+          expand: true,
+          cwd: '.tmp/views',
+          dest: '<%= yeoman.dist %>/views',
+          src: '{,*/}*.html'
         }]
       },
       styles: {
@@ -406,6 +411,7 @@ module.exports = function (grunt) {
       ],
       dist: [
         'coffee',
+        'jade',
         'compass:dist',
         'imagemin',
         'svgmin'

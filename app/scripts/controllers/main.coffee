@@ -29,13 +29,13 @@ angular.module('angularClazzApp')
             injectable: """
               class OO.Ctrl extends OO.Injectable
                 @register: (app, name) ->
-                  name ? = @name or @toString().match(/function\s*(.*?)\(/)? [1]
+                  name ?= @name or @toString().match(/function\s*(.*?)\(/)?[1]
                   if typeof app is "string" then angular.module(app).controller name, @
                   else app.controller name, @
                   @
               class OO.Service extends OO.Injectable
                 @register: (app, name) ->
-                  name ? = @name or @toString().match(/function\s*(.*?)\(/)? [1]
+                  name ?= @name or @toString().match(/function\s*(.*?)\(/)?[1]
                   if typeof app is "string" then angular.module(app).service name, @
                   else app.service name, @
                   @
@@ -61,7 +61,7 @@ angular.module('angularClazzApp')
                                       m.call @
                                       _m.call @
                               else if name isnt "constructor" and not Mixed::[name]? then Mixed::[name] = m
-                          ) ()
+                          )()
                       (Mixed[name] = method) for own name, method of mixin when angular.isFunction method
                       Mixed.inject.apply Mixed, mixin.$inject
                   Mixed
@@ -97,7 +97,7 @@ angular.module('angularClazzApp')
                       if key.match "::"
                         t = key.split "::"
                         if t[2]? and t[2].indexOf(">") isnt -1 then t = t.splice(0, 2).concat t[0].split ">"
-                        for el, i in (t[0] and Sizzle(t[0], @element? .context ? document.body) or [@$element? .context])
+                        for el, i in (t[0] and $(t[0], @element?.context ? document.body) or [@$element?.context])
                           do (el, i) =>
                               listenerO = [t[1]]
                               listenerO.push(t[2]) if t[2]?
@@ -114,7 +114,7 @@ angular.module('angularClazzApp')
                           @$scope[key] = (args...) =>
                               fn.apply @, args
                               @
-                  @initialize? ()
+                  @initialize?()
             """
             explanation: """
               The Controller - Base - Class's constructor initializes and hooks into angular to realize the actual Dependency Injection.
@@ -130,9 +130,9 @@ angular.module('angularClazzApp')
               class OO.DataService extends OO.Service
                   @inject "$resource", "$interval", "$q"
                   _db: (api, { @name, @persistant, @oneshot, @interval} ) ->
-                    @persistant ? = false
+                    @persistant ?= false
                     @oneshot = not @interval?
-                    @q ? = @$q.defer()
+                    @q ?= @$q.defer()
                     @db =
                         busy: false
                         ready: false
@@ -238,6 +238,78 @@ angular.module('angularClazzApp')
                     Easy come, easy go. You could inject the plugin as a module dependency, but then, where would you inject it?
                     I just boasted that the module is capable of registering the class as a services/controller all by itself by a class-method <code>@register</code> ...
                     Gladly, there is the <code>angular.injector([String, String2, ...])</code> method. We'll use it like so:
+                """
+            }
+            {
+                explanation: """
+                    So let's start by adding an evil<sup>tm</sup> Main-Controller. Basically I'm talking Routing-Controllers here, so not a directive's controller, but a Ctrl you'd use for a <code>$routeProvider.when(...)</code>-block.
+                    Since it is not a Widget and shall-not-manipulate-the-DOM<sup>tm</sup>, but rather ... ok, what exactly are those kind of controllers for anyway?!?
+                    Maybe we'll handle Credentials/Server-side-login here. So let's assume we're basically checking authentication during initialization ... maybe it looks like:
+                """
+                injectable: """
+                    class Main extends Clazz.Ctrl
+
+                        @inject "MyConfigValue", "$location", "$http"
+                        @register "myAppMod", "Main"
+
+                        initialize: () ->
+                            @$http.get('/path/to/auth-check').success (response) =>
+                                if response.yourJsonFormat is "yourBool"
+                                    @MyConfigValue.importantSetting = true
+                                    @$location.url "my/new/path/to/my/secure/page"
+                """
+            }
+            {
+                explanation: """
+                    OK, but this might be not the best of use cases. Let's move on.
+                    So, in fact, I think it best to organize all pattern-triples into widgets - kinda resembling the upcoming web-components.
+                    <em>Don't forget, for data communication we gotta use Services!</em>
+                    So, let's build a Widget/Directive!
+                    We'll inject a custom Service I'll show you later how to create/use, we'll use behaviours and we'll properly use functional inheritance.
+                    <br><br>
+                    To use behaviours, the annotation style is as following: <code>"CssSelection::jQueryEvent": foo</code><br>
+                    To use the same behaviour in a dynamically created element we can use delegates like:<br><code>[optional, defaults to $element]parentElCssSelection::jQueryEvent::triggerElCssSelection[optional: >parentSiblingElCssSelection]</code><br>
+                    So, you could write: <code>"::click::i.fa.fa-home>li.navitem"</code> to cover the case of a dynamically created Nav which is only triggered by a part of the `sub-component/partial` that might be the nav-el.<br>
+                    <em>Why?</em> Usually you'll want to identify the sibling clicked by a counter, which will be auto-available (and auto-updated on event) as <code>@$scope.n</code>. To give me a chance to identify which element I'm to calculate
+                    the sibling-count of, we might need to add the <code>&gt;parentSiblingElCssSelection</code>-symbol. If you trigger via a valid sibling itself, there's no such need.
+                """
+                injectable: """
+                    class MyWidget extends Clazz.Widget
+                    .mixin MyClazzyLib.StandardBehaviours, MyClazzyLib.HelperFoos
+
+                        @inject "MyConfigValuesPseudoGlobal", "MyDataService", "$interval", "$timeout"
+                        @register "myAppMod", "MyWidget"
+
+                        initialize: () =>
+                            @_api = {
+                                module: @MyConfigValuesPseudoGlobal.modules.specificModuleType.path
+                                sub: @MyConfigValuesPseudoGlobal.modules.specificModuleType.sub.specificWidgetInterest.path
+                            }
+
+                            initInterval = @$interval () =>
+                                promise = MyDataService.get @_api
+                                promise.then (response) =>
+                                    @$interval.cancel initInterval
+                                    MyDataService.digestAndTriggerListeners?()
+                                promise.catch () => console.warn "Having trouble initializing the Widget ... retrying to fetch base data"
+
+                            super
+
+                        ".logout.button::click": () =>
+                            @_doSomethingSpecific() #underscore prefixed class methods are kinda ng-private, they don't make a copy of themselves in @$scope
+                            @_behaviours "logout" #say we inherited that foo from MyClayyzLib.StandardBehaviours - and it seems to be a factory too :)
+
+                        "::sortstop::.sortable": () =>
+                            return false #TODO: implement behaviour on jQueryUI sorting :)
+
+                        mutation: (service) =>
+                            #You might want to create an extended BaseDataService that implements Listener mechanisms and triggers this method on change
+                            switch service
+                                when "MyDataService"
+                                    @$scope.data.widgetSpecific = @MyDataService.db.store.widgetSpecificData
+                                    #trigger digest cycle or something ...
+                                when "SomeOtherDataService"
+                                    @$scope.data.widgetSpecific2 #TODO hook it up
                 """
             }
         ]
