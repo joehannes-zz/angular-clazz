@@ -63,7 +63,7 @@ html, body {
 
 header {
   position: relative;
-  @include background(linear-gradient(to bottom, rgba(gray, .5), rgba(silver, .5) 45% , rgba(gray, .5) 95%, rgba(red, .5)), image-url("/images/swirl_pattern.png"));
+  @include background(linear-gradient(to bottom, rgba(gray, .5), rgba(silver, .5) 45% , rgba(gray, .5) 95%, rgba(red, .5)), image-url("images/swirl_pattern.png"));
   box-shadow: 0 0 15px 5px black;
   z-index: 99;
 }
@@ -78,7 +78,7 @@ h1.stylish-letters {
 p.explanation {
   margin-bottom: 15px;
   padding: 15px;
-  @include background(image-url('/images/halftone.png'));
+  @include background(image-url('images/halftone.png'));
   box-shadow: 0 0 10px 3px olive;
   border-radius: 5px;
   border: 1px solid white;
@@ -97,12 +97,12 @@ section {
 }
 
 section.intro{
-  @include background(linear-gradient(to bottom, rgba(gray, .5), rgba(silver, .5) 45% , rgba(gray, .5) 95%, rgba(teal, .5)), image-url("/images/skulls.png"));
+  @include background(linear-gradient(to bottom, rgba(gray, .5), rgba(silver, .5) 45% , rgba(gray, .5) 95%, rgba(teal, .5)), image-url("images/skulls.png"));
   z-index: 98;
 }
 
 section.action{
-    @include background(linear-gradient(to bottom, rgba(gray, .5), rgba(silver, .5) 45% , rgba(gray, .5) 95%, rgba(navy, .5)), image-url("/images/symphony.png"));
+    @include background(linear-gradient(to bottom, rgba(gray, .5), rgba(silver, .5) 45% , rgba(gray, .5) 95%, rgba(navy, .5)), image-url("images/symphony.png"));
     z-index: 97;
 }
 
