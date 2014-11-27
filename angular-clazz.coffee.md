@@ -1,7 +1,3 @@
-Dependency on Selector Engine -- Choose Sizzle or jQuery
-
-	window.Sizzle ?= window.$ ? null
-
 Module Definition
 
 	module = angular.module "angular-clazz", []
@@ -87,7 +83,7 @@ Behavioural Initialization --- basically registering Event Listeners
 						if key.match "::"
 							t = key.split "::"
 							if t[2]? and t[2].indexOf(">") isnt -1 then t = t.splice(0, 2).concat t[0].split ">"
-							for el, i in (t[0] and Sizzle(t[0], @element?.context ? document.body) or [@$element?.context])
+							for el, i in (t[0] and $(t[0], @element?.context ? document.body) or [@$element?.context])
 								do (el, i) =>
 									listenerO = [t[1]]
 									listenerO.push(t[2]) if t[2]?
@@ -161,17 +157,17 @@ AJAX Mechanism
 						@_store(data[@name] ? data)
 						@db.busy = false
 						if not @persistant
-							if @oneshot is true 
+							if @oneshot is true
 								@q.resolve()
 								@q = null
 							else @q.notify(true)
 						@db.ready = true
 					.catch (err) =>
 						console.warn "err #{@name}"
-						if @oneshot is true 
+						if @oneshot is true
 							@q.reject()
 							@q = null
-						else 
+						else
 							@q.notify(false)
 
 
@@ -193,16 +189,16 @@ Storage Mechanism
 								.finally (args...) =>
 									@db.store.put(o, o.id, o._rev)
 										.then (response) =>
-											if @oneshot is true 
+											if @oneshot is true
 												@q.resolve()
 												@q = null
 											else @q.notify(true)
 										.catch (err) =>
 											console.warn "db error: couldn't put #{o.toString()}"
-											if @oneshot is true 
+											if @oneshot is true
 												@q.reject()
 												@q = null
-											else 
+											else
 												@q.notify(false)
 				else
 					(o.deleted = true) for o in @db.store
@@ -211,7 +207,7 @@ Storage Mechanism
 							if (i = @db.store.indexOf(@db.store.filter (el) -> el.id is o.id)) isnt -1
 								(@db.store[i][k] = o[k]) for own k, v of o
 								@db.store[i].deleted = false
-							else 
+							else
 								@db.store.push o
 								@db.store[@db.store.length - 1].deleted = false
 
