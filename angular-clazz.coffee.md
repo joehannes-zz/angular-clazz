@@ -178,8 +178,9 @@ AJAX Mechanism
 Storage Mechanism
 
 			_store: (data) ->
+				_data = if Object.prototype.toString.call(data) is "[object Array]" then data else [data]
 				if @persistant
-					for o in data
+					for o in _data
 						do (o) =>
 							@db.store.query((doc, emit) -> if doc.id is o.id then emit doc)
 								.then (doc) =>
@@ -206,7 +207,7 @@ Storage Mechanism
 												@q.notify(false)
 				else
 					(o.deleted = true) for o in @db.store
-					for o in data
+					for o in _data
 						do (o) =>
 							if (i = @db.store.indexOf(@db.store.filter (el) -> el.id is o.id)) isnt -1
 								(@db.store[i][k] = o[k]) for own k, v of o

@@ -303,11 +303,12 @@
       };
 
       DataService.prototype._store = function(data) {
-        var o, _i, _j, _k, _len, _len1, _len2, _ref2, _results, _results1;
+        var o, _data, _i, _j, _k, _len, _len1, _len2, _ref2, _results, _results1;
+        _data = Object.prototype.toString.call(data) === "[object Array]" ? data : [data];
         if (this.persistant) {
           _results = [];
-          for (_i = 0, _len = data.length; _i < _len; _i++) {
-            o = data[_i];
+          for (_i = 0, _len = _data.length; _i < _len; _i++) {
+            o = _data[_i];
             _results.push((function(_this) {
               return function(o) {
                 return _this.db.store.query(function(doc, emit) {
@@ -354,8 +355,8 @@
             o.deleted = true;
           }
           _results1 = [];
-          for (_k = 0, _len2 = data.length; _k < _len2; _k++) {
-            o = data[_k];
+          for (_k = 0, _len2 = _data.length; _k < _len2; _k++) {
+            o = _data[_k];
             _results1.push((function(_this) {
               return function(o) {
                 var i, k, v;
