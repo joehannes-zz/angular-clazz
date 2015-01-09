@@ -242,17 +242,27 @@
         return DataService.__super__.constructor.apply(this, arguments);
       }
 
-      DataService.inject("$resource", "$interval", "$q");
+      DataService.inject("$resource", "$interval", "$q", "$timeout");
 
       DataService.prototype._db = function(api, _arg) {
+        var _ref1;
         this.name = _arg.name, this.persistant = _arg.persistant, this.oneshot = _arg.oneshot, this.interval = _arg.interval;
         if (this.persistant == null) {
           this.persistant = false;
         }
-        this.oneshot = this.interval == null;
-        if (this.q == null) {
-          this.q = this.$q.defer();
+        this.oneshot = this.oneshot || (this.interval == null);
+        if (((_ref1 = this.db) != null ? _ref1.busy : void 0) === true) {
+          this.$timeout((function(_this) {
+            return function() {
+              if (_this.oneshot === true) {
+                return _this.q.reject();
+              } else {
+                return _this.q.notify(false);
+              }
+            };
+          })(this), 0);
         }
+        this.q = this.$q.defer();
         this.db = {
           busy: false,
           ready: false,
@@ -260,7 +270,9 @@
           store: this.persistant && _DB.create(this.name) || []
         };
         this._api();
-        this.oneshot || this.$interval(this._api.bind(this), this.interval);
+        if (this.oneshot === false) {
+          this.$interval(this._api.bind(this), this.interval);
+        }
         return this.q.promise;
       };
 

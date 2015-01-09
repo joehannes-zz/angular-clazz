@@ -128,14 +128,18 @@ View Controllers are Main Page Controllers of an Angular Route, they hold all DB
 Widget Controllers listen to that db-collections and transform and store that adapted data into their own local dbs
 
 		class OO.DataService extends OO.Service
-			@inject "$resource", "$interval", "$q"
+			@inject "$resource", "$interval", "$q", "$timeout"
 
 Create the DB
 
 			_db: (api, { @name, @persistant, @oneshot, @interval}) ->
 				@persistant ?= false
-				@oneshot = not @interval?
-				@q ?= @$q.defer()
+				@oneshot = @oneshot or not @interval?
+				if @db?.busy is true then @$timeout () =>
+					if @oneshot is true then @q.reject() 
+					else @q.notify false
+				, 0
+				@q = @$q.defer()
 				@db =
 					busy: false
 					ready: false
@@ -143,7 +147,7 @@ Create the DB
 					store: @persistant and _DB.create(@name) or []
 
 				@_api()
-				@oneshot or @$interval @_api.bind(@), @interval
+				if @oneshot is false then @$interval @_api.bind(@), @interval
 				@q.promise
 
 AJAX Mechanism
