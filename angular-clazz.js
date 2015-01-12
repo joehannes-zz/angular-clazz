@@ -250,7 +250,7 @@
         if (this.persistant == null) {
           this.persistant = false;
         }
-        this.oneshot = this.oneshot || (this.interval == null);
+        this.oneshot = this.oneshot === true || (this.interval == null);
         if (((_ref1 = this.db) != null ? _ref1.busy : void 0) === true) {
           this.$timeout((function(_this) {
             return function() {
@@ -283,14 +283,17 @@
         this.db.busy = true;
         return this.db.handle.get().$promise.then((function(_this) {
           return function(data) {
-            var _ref1;
+            var _ref1, _ref2;
             console.info("success " + _this.name);
             _this._store((_ref1 = data[_this.name]) != null ? _ref1 : data);
             _this.db.busy = false;
             if (!_this.persistant) {
-              if (_this.oneshot === true) {
-                _this.q.resolve();
+              if (_this.oneshot !== false) {
+                if ((_ref2 = _this.q) != null) {
+                  _ref2.resolve();
+                }
                 _this.q = null;
+                _this.q = _this.$q.defer();
               } else {
                 _this.q.notify(true);
               }
@@ -299,10 +302,14 @@
           };
         })(this))["catch"]((function(_this) {
           return function(err) {
+            var _ref1;
             console.warn("err " + _this.name);
-            if (_this.oneshot === true) {
-              _this.q.reject();
-              return _this.q = null;
+            if (_this.oneshot !== false) {
+              if ((_ref1 = _this.q) != null) {
+                _ref1.reject();
+              }
+              _this.q = null;
+              return _this.q = _this.$q.defer();
             } else {
               return _this.q.notify(false);
             }

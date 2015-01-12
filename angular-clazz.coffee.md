@@ -134,9 +134,9 @@ Create the DB
 
 			_db: (api, { @name, @persistant, @oneshot, @interval}) ->
 				@persistant ?= false
-				@oneshot = @oneshot or not @interval?
+				@oneshot = @oneshot is true or not @interval?
 				if @db?.busy is true then @$timeout () =>
-					if @oneshot is true then @q.reject() 
+					if @oneshot is true then @q.reject()
 					else @q.notify false
 				, 0
 				@q = @$q.defer()
@@ -161,16 +161,18 @@ AJAX Mechanism
 						@_store(data[@name] ? data)
 						@db.busy = false
 						if not @persistant
-							if @oneshot is true
-								@q.resolve()
+							if @oneshot isnt false
+								@q?.resolve()
 								@q = null
+								@q = @$q.defer()
 							else @q.notify(true)
 						@db.ready = true
 					.catch (err) =>
 						console.warn "err #{@name}"
-						if @oneshot is true
-							@q.reject()
+						if @oneshot isnt false
+							@q?.reject()
 							@q = null
+							@q = @$q.defer()
 						else
 							@q.notify(false)
 
