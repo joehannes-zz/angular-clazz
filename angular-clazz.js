@@ -245,7 +245,7 @@
       DataService.inject("$resource", "$interval", "$q", "$timeout");
 
       DataService.prototype._db = function(api, _arg) {
-        var _ref1;
+        var _ref1, _ref2;
         this.name = _arg.name, this.persistant = _arg.persistant, this.oneshot = _arg.oneshot, this.interval = _arg.interval;
         if (this.persistant == null) {
           this.persistant = false;
@@ -269,10 +269,24 @@
           handle: api != null ? this.$resource(api) : null,
           store: this.persistant && _DB.create(this.name) || []
         };
-        this._api();
         if (this.oneshot === false) {
-          this.$interval(this._api.bind(this), this.interval);
+          (_ref2 = this.q.promise).then.apply(_ref2, [
+            (function(_this) {
+              return function() {
+                return true;
+              };
+            })(this), (function(_this) {
+              return function(notification) {
+                return _this.$timeout(_this._api, _this.interval);
+              };
+            })(this), (function(_this) {
+              return function() {
+                return false;
+              };
+            })(this)
+          ]);
         }
+        this._api();
         return this.q.promise;
       };
 
@@ -284,7 +298,7 @@
         return this.db.handle.get().$promise.then((function(_this) {
           return function(data) {
             var _ref1, _ref2;
-            console.info("success " + _this.name);
+            console.info("" + ((new Date()).toLocaleTimeString('en-US')) + " :: API/" + _this.name + ": Success");
             _this._store((_ref1 = data[_this.name]) != null ? _ref1 : data);
             _this.db.busy = false;
             if (!_this.persistant) {
@@ -303,7 +317,7 @@
         })(this))["catch"]((function(_this) {
           return function(err) {
             var _ref1;
-            console.warn("err " + _this.name);
+            console.warn("" + ((new Date()).toLocaleTimeString('en-US')) + " :: API/" + _this.name + ": Error :: " + (err.toString()));
             if (_this.oneshot !== false) {
               if ((_ref1 = _this.q) != null) {
                 _ref1.reject();

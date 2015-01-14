@@ -146,8 +146,12 @@ Create the DB
 					handle: if api? then @$resource(api) else null
 					store: @persistant and _DB.create(@name) or []
 
+				if @oneshot is false then @q.promise.then [
+					() => true
+					(notification) => @$timeout @_api, @interval
+					() => false
+				]...
 				@_api()
-				if @oneshot is false then @$interval @_api.bind(@), @interval
 				@q.promise
 
 AJAX Mechanism
@@ -157,7 +161,7 @@ AJAX Mechanism
 				@db.busy = true
 				@db.handle.get().$promise
 					.then (data) =>
-						console.info "success #{@name}"
+						console.info "#{(new Date()).toLocaleTimeString('en-US')} :: API/#{@name}: Success"
 						@_store(data[@name] ? data)
 						@db.busy = false
 						if not @persistant
@@ -168,7 +172,7 @@ AJAX Mechanism
 							else @q.notify(true)
 						@db.ready = true
 					.catch (err) =>
-						console.warn "err #{@name}"
+						console.warn "#{(new Date()).toLocaleTimeString('en-US')} :: API/#{@name}: Error :: #{err.toString()}"
 						if @oneshot isnt false
 							@q?.reject()
 							@q = null
