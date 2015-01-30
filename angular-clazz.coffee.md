@@ -6,10 +6,6 @@ Provider Definition
 
 	module.provider("Clazz", () ->
 
-		try
-			_DB = angular.injector(['pouchdb'])?.get? 'pouchdb'
-		catch err
-			console.info "Angular-PouchDB not available - you can't use local persistance, but volatile version is available"
 		OO = {}
 
 Credit for the base class goes to Elad Ossadon as seen on [devign.me](http://www.devign.me/angular-dot-js-coffeescript-controller-base-class)
@@ -132,8 +128,7 @@ Widget Controllers listen to that db-collections and transform and store that ad
 
 Create the DB
 
-			_db: (api, { @name, @persistant, @oneshot, @interval}) ->
-				@persistant ?= false
+			_db: (api, { @name, @oneshot, @interval}) ->
 				@oneshot = @oneshot is true or not @interval?
 				if @db?.busy is true then @$timeout () =>
 					if @oneshot is true then @q.reject()
@@ -144,7 +139,7 @@ Create the DB
 					busy: false
 					ready: false
 					handle: if api? then @$resource(api) else null
-					store: @persistant and _DB.create(@name) or []
+					store: []
 
 				if @oneshot is false then @q.promise.then [
 					() => true
@@ -164,12 +159,11 @@ AJAX Mechanism
 						console.info "#{(new Date()).toLocaleTimeString('en-US')} :: API/#{@name}: Success"
 						@_store(data[@name] ? data)
 						@db.busy = false
-						if not @persistant
-							if @oneshot isnt false
-								@q?.resolve()
-								@q = null
-								@q = @$q.defer()
-							else @q.notify(true)
+						if @oneshot isnt false
+							@q?.resolve()
+							@q = null
+							@q = @$q.defer()
+						else @q.notify(true)
 						@db.ready = true
 					.catch (err) =>
 						console.warn "#{(new Date()).toLocaleTimeString('en-US')} :: API/#{@name}: Error :: #{err.toString()}"
@@ -180,47 +174,19 @@ AJAX Mechanism
 						else
 							@q.notify(false)
 
-
 Storage Mechanism
 
 			_store: (data) ->
 				_data = if Object.prototype.toString.call(data) is "[object Array]" then data else [data]
-				if @persistant
-					for o in _data
-						do (o) =>
-							@db.store.query((doc, emit) -> if doc.id is o.id then emit doc)
-								.then (doc) =>
-									console.info '#Data for id _#{o.id}_ will be updated now'
-									if doc.error isnt "not_found" and doc.total_rows is 1
-										o._id = doc.rows[0].key._id
-										o._rev = doc.rows[0].key._rev
-								.catch (err) =>
-									console.warn "db error: couldn't query for #{o.id}"
-									throw err.toString()
-								.finally (args...) =>
-									@db.store.put(o, o.id, o._rev)
-										.then (response) =>
-											if @oneshot is true
-												@q.resolve()
-												@q = null
-											else @q.notify(true)
-										.catch (err) =>
-											console.warn "db error: couldn't put #{o.toString()}"
-											if @oneshot is true
-												@q.reject()
-												@q = null
-											else
-												@q.notify(false)
-				else
-					(o.deleted = true) for o in @db.store
-					for o in _data
-						do (o) =>
-							if (i = @db.store.indexOf(@db.store.filter (el) -> el.id is o.id)) isnt -1
-								(@db.store[i][k] = o[k]) for own k, v of o
-								@db.store[i].deleted = false
-							else
-								@db.store.push o
-								@db.store[@db.store.length - 1].deleted = false
+				(o.eligible = true) for o in @db.store
+				for o in _data
+					do (o) =>
+						if (i = @db.store.indexOf(@db.store.filter (el) -> el.id is o.id)) isnt -1
+							(@db.store[i][k] = o[k]) for own k, v of o
+							@db.store[i].eligible = false
+						else
+							@db.store.push o
+							@db.store[@db.store.length - 1].eligible = false
 
 		class OO.Widget extends OO.Ctrl
 			@inject "$element"
