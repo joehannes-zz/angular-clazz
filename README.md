@@ -1,3 +1,5 @@
+# This is not being developed any more ... there's an ES-Harmony successor on github.com/ng-harmony
+
 **Welcome, Geek!**
 
 This package enables for use in Angular in combination with Coffeescript:
